@@ -8,6 +8,7 @@ stepsCompleted:
   - step-04-journeys
   - step-05-domain
   - step-06-innovation
+  - step-07-project-type
 inputDocuments:
   - docs/AlgoTrade_India_Product_Brief_v1.1.md
   - _bmad-output/planning-artifacts/research/market-ai-powered-nse-bse-intraday-trading-in-india-research-2026-03-20.md
@@ -228,3 +229,74 @@ Mains fail; UPS countdown starts. **Priya’s partner** (documented in **printed
 | **“Composition” becomes unmaintainable** | **Modular monolith** boundaries, **contract tests** at adapter seams, **feature flags** for risky paths |
 | **Retraining introduces silent harm** | **Promotion veto** by **drawdown / PSI / reconciliation**; **automatic rollback**; **paper-only** on breach |
 | **Overclaiming novelty** | Position as **excellent execution of known practices**, not magic alpha |
+
+## API Backend Specific Requirements
+
+### Project-Type Overview
+
+The **execution plane** is an **internal FastAPI** service: **sole** ingress from ML/signals to **risk-checked** orders and **mode control**. It is **not** a public developer platform; **surface area is intentionally small**, **authenticated**, and **aligned to the order state machine** (brief §10).
+
+### Technical Architecture Considerations
+
+- **Async HTTP** where appropriate for I/O-bound broker calls; **state transitions** are **explicit** and **logged** (no “fire and forget” submissions without tracking).
+- **Adapter boundary:** Breeze REST/WebSocket **isolated** behind a **broker module**; internal API speaks **domain shapes** (signal, order intent, position), not raw vendor JSON.
+- **Health & deps:** `/health` supports **dead man’s switch**; **dependency readiness** (DB, broker session, clock sync) reflected in **response** or **sub-resources** as implementation chooses—**semantics** must distinguish **“alive but not trade-ready.”**
+
+### Endpoint specification
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| POST | `/signal` | Accept **ML signal**; run **pre-trade**; submit or **reject** |
+| POST | `/order` | **Manual** intent; still passes **full** risk path |
+| GET | `/positions` | Open positions + **live P&L** view model |
+| GET | `/pnl` | Daily / weekly / monthly **aggregation** |
+| GET | `/health` | **Liveness** / watchdog |
+| POST | `/kill` | **Kill switch** — **authenticated** |
+| POST | `/mode` | **Paper vs live** — **market-hours policy** applies |
+| GET | `/data/status` | **Per-symbol** data path + **last tick** metadata |
+
+*(Paths may be prefixed e.g. `/api/v1/...` if versioning is adopted—see Versioning & documentation.)*
+
+### Authentication model
+
+- **Operator + automation:** **State-changing or risk-increasing** calls require **proven identity** (shared secret, token, or mTLS—**TBD in implementation**); **no anonymous** `/signal` on any **exposed** deployment.
+- **`POST /kill` and `POST /mode`:** **Strong authentication**; **Telegram / dashboard** confirmation maps to the **same** authority model.
+- **Broker credentials:** **Never** accepted via this API; **session** is **owned** by the **ingestion/execution** layer using **vaulted** secrets.
+
+### Data schemas
+
+- **Request/response:** **JSON** with **Pydantic** (or equivalent) **schemas**; **OpenAPI** generated **from** code (single source of truth).
+- **Signal payload:** Includes **model version**, **feature snapshot id** or **hash**, **confidence**, **regime**, **timestamp**, **instrument id**—minimum set for **audit** (brief-aligned).
+- **Error payload:** Structured **code**, **message**, **correlation_id**, optional **broker_reason_code**.
+
+### Error codes
+
+- **Taxonomy:** **Validation** (4xx), **risk rejection** (4xx, stable machine codes), **broker/transient** (502/503 with **retry hints** where safe), **internal** (5xx).
+- **Idempotency:** **Client-supplied idempotency key** for **POST /signal** and **POST /order** where duplicates would be **capital-dangerous**—**implementation decision** with default **reject duplicate intent** documented.
+
+### Rate limits
+
+- **Internal:** **Token bucket** per **operator** and per **endpoint class** to prevent **accidental loops** from ML or scripts.
+- **Broker-facing:** **Enforce** Breeze **per-endpoint** limits in the **adapter**; **backpressure** to ML (**suppress** or **queue** with **staleness kill**) per policy—must not **blindly retry** into **bans**.
+
+### Versioning & documentation
+
+- **URI or header versioning** (`/v1`) once **breaking** schema changes ship; **deprecation window** documented.
+- **`api_docs`:** **OpenAPI 3** + **short operator runbook** (curl examples for **kill**, **mode**, **health**); **changelog** tied to **git tags**.
+
+### Implementation considerations
+
+- **Timeouts:** **Order ack** and **partial fill** handling per brief §10.2; **safe-close** on **ERROR** states.
+- **Observability:** **Structured logs** with **correlation_id** from signal → order → fill; **metrics** on **latency**, **reject reasons**, **broker errors**.
+- **Skipped for this section (per `project-types.csv`):** **ux_ui**, **visual_design**, **user_journeys**—Streamlit remains an **operator console** only.
+
+### CSV key questions — resolved from brief
+
+| Question | Direction |
+|----------|-----------|
+| Endpoints | Table above (brief §10.1) |
+| Authentication | **Token/secret** for privileged routes; **no** public marketplace |
+| Data formats | **JSON** + **strict schemas** |
+| Rate limits | **Internal + broker** token buckets |
+| Versioning | **v1 prefix** when breaking changes occur |
+| SDK | **No external SDK**; **OpenAPI** for internal tooling only |
