@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2, 3]
+stepsCompleted: [1, 2, 3, 4]
 inputDocuments:
   - _bmad-output/planning-artifacts/research/technical-ai-powered-nse-bse-intraday-trading-in-india-research-2026-03-20.md
   - _bmad-output/planning-artifacts/research/domain-ai-powered-nse-bse-intraday-trading-in-india-research-2026-03-20.md
@@ -92,3 +92,93 @@ Reconciliation and **explainability** feel **boring and reliable**; paper progre
 
 **Long term**  
 **Staged live capital** only after sustained paper discipline; **model and scope** grow **after** replay, risk gateway, and broker truth are boring; the **dedicated machine** stays the boundary between normal life and **market risk**.
+
+## Success Metrics
+
+### User success (what “working” means for you)
+
+**North star (year one, aligned with your stated “1a” goal)**  
+You have a **paper → gated live** path you **trust**: you can explain **act vs block**, **internal state matches broker** often enough to rely on, and **capital isn’t lost to ops chaos** (bugs, drift, bypassed limits, mystery fills) while you’re still learning **markets** and **your own stack**.
+
+**90-day paper foundation (early “worth it” window)**  
+Success isn’t profitability yet—it’s **boring reliability**:
+
+- **Session ops:** trading machine runs through **full market sessions** you intend to trade, without ad-hoc “I’ll fix it live” patches becoming routine.
+- **Data truth:** **WebSocket-primary** path works; when it degrades, the system behaves **as designed** (e.g. monitor-only / no new entries on coarse feeds)—not silently “best effort.”
+- **Explainability:** for a **sampled set** of decisions (e.g. weekly review), you can answer **why trade / why no trade** from logs + feature/signal snapshot, without forensic archaeology.
+- **Limits culture:** **no risk-parameter changes during market hours** except true emergency protocol—you’re not “tuning away” a bad day.
+
+**Behavioural signals you’re getting value (not vanity)**  
+These are **observable habits** the system supports:
+
+- You complete a **short daily close-out**: positions flat or explained, reconciliation ticked, incidents noted.
+- **Kill switch / degraded mode** are **tested** on a cadence you define (e.g. monthly drill)—you trust them before you need them.
+- Paper trading is **long enough and honest enough** that you’d be embarrassed to promote to live if reconciliation were failing—**the gate is emotional + quantitative**.
+
+---
+
+### Business objectives
+
+There is **no commercial business** for v1—**you are the only “shareholder.”** Objectives are **personal portfolio governance**, not revenue.
+
+| Horizon | Objective |
+|--------|-----------|
+| **0–3 months** | **Prove the machine**: install → paper → **stable ingest + risk gateway + attribution** on a **small universe**; treat “complexity added” as a **risk** until gates pass. |
+| **3–12 months** | **Prove the process under staged live rules**: only after paper discipline; **capital ramps** follow **human sign-off** and **missed-check consequences** (e.g. back to paper). |
+| **Ongoing** | **Stay audit-ready for yourself**: exports and logs good enough that **future-you** (or a CA) can reconstruct **what happened and why**—aligned with your long brief’s tax/audit posture. |
+
+**Strategic “moat” (personal)**  
+Your advantage isn’t a secret indicator—it’s **execution realism + governance**: parity between paper/live paths, **reconciliation**, **replay**, and **promotion rules** for anything that emits orders.
+
+---
+
+### Key Performance Indicators
+
+Metrics below are **examples** until you wire exact thresholds in implementation; they’re chosen so you can **measure** them from **logs, DB, broker statements**, not vibes.
+
+#### Operations & trust (leading indicators)
+
+| KPI | What it measures | Example target / review |
+|-----|------------------|-------------------------|
+| **Market-hours availability** | Stack healthy when you need it | ≥ **X%** of intended sessions without **unplanned** downtime (define X after you see baseline). |
+| **Data freshness age** | Latency / gap detection | Tick/feature age within **SLO** you set in the long brief (e.g. “normal” vs “degraded”). |
+| **Mode time split** | Time in `WEBSOCKET` vs fallback | Track % session in **REST_POLL** or degraded—**high fallback** → **signal quality** and **confidence** must **not** pretend nothing changed. |
+| **Reconciliation pass rate** | Internal vs broker | **100%** Explained exceptions with **ticket/note**; **unexplained mismatch blocks next-day live** (per your spec philosophy). |
+| **Block reason coverage** | Explainability | **100%** of blocks have **coded reason** + enough context to replay the decision. |
+
+#### Risk & discipline (guardrail effectiveness)
+
+| KPI | What it measures | Example target / review |
+|-----|------------------|-------------------------|
+| **Limit breaches** | Hard rules vs reality | **0** unintended breaches; any breach is **incident-class** with postmortem. |
+| **Kill-switch activations** | Emergency use | Rare; each logged with **cause** and **follow-up** (test or rule change). |
+| **Config changes in session** | Discipline | **0** “normal” changes during **locked window**; violations logged. |
+
+#### Learning system / ML (lagging & quality—only after plumbing works)
+
+| KPI | What it measures | Notes |
+|-----|------------------|------|
+| **Paper performance (risk-adjusted)** | Is there *any* plausible edge in simulation | Use **Sharpe / max DD / reconciliation-clean periods**—not raw PnL alone. |
+| **Promotion success rate** | Model/challenger hygiene | % candidates promoted; **rollback count** after promotion; tie to **champion–challenger** policy in long brief. |
+| **Signal disagreement / regime flags** | Early warning | Rising disagreement → **downgrade path** (rules / wider thresholds), not “trade more.” |
+
+#### Personal “capital” objectives (live phase only, staged)
+
+| KPI | What it measures |
+|-----|------------------|
+| **Live capital stage adherence** | No skipping stages without explicit signed decision |
+| **Live max drawdown vs plan** | Breach → **automatic** step-down to paper or lower stage |
+
+---
+
+### What we are deliberately *not* optimizing for in year one
+
+- **Maximizing trade count** or “always in the market.”  
+- **Short-term profit** as the **primary** KPI before **reconciliation + explainability** are boringly solid.  
+- **Model complexity** ahead of **risk gateway + data truth**.
+
+### Strategic alignment (vision ↔ metrics)
+
+- **Process-first (“1a”)** → ops + reconciliation KPIs **precede** performance KPIs.  
+- **Dedicated machine** → availability and **session ritual** metrics matter—they’re how you buy **attention** and **fewer mistakes**.  
+- **Solo operator** → every KPI must be **reducible to a checklist** one person can run without a NOC team.
