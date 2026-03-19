@@ -5,6 +5,7 @@ stepsCompleted:
   - step-02b-vision
   - step-02c-executive-summary
   - step-03-success
+  - step-04-journeys
 inputDocuments:
   - docs/AlgoTrade_India_Product_Brief_v1.1.md
   - _bmad-output/planning-artifacts/research/market-ai-powered-nse-bse-intraday-trading-in-india-research-2026-03-20.md
@@ -117,3 +118,46 @@ Aligned to **brief Phase 1** (months 1–2): **Breeze WebSocket + REST CRUD**, *
 **Brief Phase 4+:** **RL in production ensemble** if shadow beats champion; richer features; **external capital** data model **without** breaking v1 schema.
 
 **Scope note:** Success is measured **first** on **survivability artifacts** (reconciliation, degraded modes, governance), **then** on **PnL metrics**—matching the Executive Summary differentiator.
+
+## User Journeys
+
+### Journey 1 — Primary operator: “Normal RTH day” (success path)
+
+**Priya** runs AlgoTrade on a home PC with static IP. **08:45** she gets the **Telegram morning brief**: watchlist, events, model health, last tick ages. She glances at **Streamlit**: WebSocket **green**, positions flat. **09:15–09:30** she expects **observation-only**—no surprises. After **09:30**, signals may flow; when a **buy** clears the ensemble and regime filters, the **internal API** runs **pre-trade checks**, places a **bracket** order via Breeze, and the dashboard shows **order state** advancing to **POSITION_OPEN**. She checks **SHAP top features** once—not to override, but to sanity-check. **15:20** flat **or** stops/targets hit; **EOD reconciliation** runs. She closes the laptop feeling **bored in a good way**: the system did the boring parts and left an **audit trail**.
+
+**Climax:** First day she trusts **reconciliation** without opening the broker app for every fill.  
+**Resolution:** Operator shifts from **watching ticks** to **watching SLOs and drift**.
+
+### Journey 2 — Primary operator: “Feed dies, entries must stop” (edge / failure)
+
+**11:20** WebSocket drops. Priya’s phone buzzes: **disconnect alert**, then **REST_POLL** mode. Dashboard shows **amber**: positions still monitored, **new entries suppressed** (brief policy). She does **not** flip configs mid-session—they’re **locked**. She confirms **gap-fill** is queued for reconnect. **Climax:** She verifies **no rogue entries** were attempted while granularity was coarse. **Resolution:** Back on WebSocket; backfill completes; next signal only when **feature freshness** and **data source** gates pass.
+
+**Reveals:** Degraded-mode UX, poll vs WS semantics, pre-trade **REST_POLL** block, alerting, recovery ordering.
+
+### Journey 3 — Operator as “governance admin”: Sunday night change window
+
+After market close, Priya unlocks **config**: adjusts a **confidence** floor or **watchlist** rule. Change is **logged**, **versioned**, and effective **next** session per policy. She reviews **challenger** metrics from the week and approves or **rejects** promotion in **MLflow / registry** workflow. **Climax:** Saying **no** to a model that wins accuracy but fails **drawdown** on hold-out—documented decision. **Resolution:** Monday runs on a **known** policy surface; no “what did we ship Friday?” doubt.
+
+**Reveals:** Market-hours lock, human sign-off for promotion, audit of config/model changes.
+
+### Journey 4 — Trusted person / incident (support & DR narrative)
+
+Mains fail; UPS countdown starts. **Priya’s partner** (documented in **printed DR**, brief §14) uses **broker web** to flatten if automation cannot. Separately, for a **tax audit**, **CA** receives **CSV/PDF exports** and **intervention log**—no hand-wavy screenshots. **Climax:** Capital safe **or** books defensible under scrutiny. **Resolution:** DR and compliance artifacts are **first-class outputs**, not side quests.
+
+**Reveals:** Export schemas, DR runbook, kill/flatten instructions, retention.
+
+### Journey 5 — Technical / “API consumer”: batch & automation
+
+**Nightly 22:00 IST**, **scheduler** triggers **retraining**: labels from DB, **train**, **evaluate vs champion**, **register** artifact or rollback. Another job hits **`GET /health`** for **dead man’s switch**. **Climax:** Promotion blocked when **leakage audit** or **metric gates** fail—pipeline exits **non-zero**, alert fires. **Resolution:** Headless operation matches **human** expectations: no silent deploy.
+
+**Reveals:** Internal API for health/mode, job idempotency, training gates, observability for batch paths.
+
+### Journey Requirements Summary
+
+| Journey | Capability areas surfaced |
+|---------|---------------------------|
+| **Normal RTH** | Ingestion health, feature + regime gates, ensemble, risk API, order state machine, bracket orders, dashboard, Telegram brief, SHAP surfacing |
+| **Feed failure** | WS reconnect, REST poll, entry suppression, gap backfill, staleness gates, operator alerts |
+| **Governance window** | Config lockout, change audit, model registry, champion–challenger, promotion/rollback |
+| **DR / compliance** | Exports, turnover, intervention journal, third-party broker access, DR documentation |
+| **Automation** | APScheduler jobs, training orchestration, health endpoints, failure alerts, CI-friendly gates |
