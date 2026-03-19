@@ -1,0 +1,41 @@
+---
+description: Standardize git commit message format
+alwaysApply: true
+---
+
+# Commit Message Format
+
+Use Conventional Commit style for every commit:
+
+`<type>(<scope>): <subject>`
+
+If scope is not useful, use:
+
+`<type>: <subject>`
+
+## Allowed Types
+
+- `feat` for new functionality
+- `fix` for bug fixes
+- `refactor` for internal improvements with no behavior change
+- `test` for test additions or updates
+- `docs` for documentation-only changes
+- `chore` for tooling, maintenance, or housekeeping
+
+## Subject Rules
+
+- Use imperative mood (for example: "add", "fix", "update")
+- Keep subject concise (target <= 72 characters)
+- Do not end the subject with a period
+
+## Body Rules
+
+- Add a short body (1-3 lines) explaining why the change was made
+- Mention key constraints, tradeoffs, or follow-up context when relevant
+
+## Examples
+
+- `feat(auth): add refresh token rotation`
+- `fix(api): handle empty order book response`
+- `refactor(backtest): extract pnl calculation helper`
+- `test(strategy): add edge case for zero-volume candles`

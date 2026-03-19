@@ -1,0 +1,25 @@
+---
+description: Commit after every meaningful code change
+alwaysApply: true
+---
+
+# Commit Discipline
+
+Create a git commit after every meaningful code change, whether the work comes from:
+- Regular chat requests
+- BMAD workflow tasks (stories, quick-dev, specs, or related flows)
+
+## What Counts As Meaningful
+
+A change is meaningful when it alters behavior, fixes a bug, adds/refactors logic, updates tests with implementation impact, or changes user-facing/documented functionality.
+
+## Commit Requirements
+
+- Do not batch unrelated meaningful changes into one commit.
+- Use clear commit messages that explain intent.
+- Follow repository safety constraints: no destructive git operations, no force pushes to protected branches, no secret files.
+- If there are no meaningful changes, do not create an empty commit.
+
+## If Commit Is Blocked
+
+When a commit cannot be made (hooks failing, missing repo, permission issues, or user restriction), explicitly report the blocker and the exact next command(s) the user should run.
