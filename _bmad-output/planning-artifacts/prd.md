@@ -7,6 +7,7 @@ stepsCompleted:
   - step-03-success
   - step-04-journeys
   - step-05-domain
+  - step-06-innovation
 inputDocuments:
   - docs/AlgoTrade_India_Product_Brief_v1.1.md
   - _bmad-output/planning-artifacts/research/market-ai-powered-nse-bse-intraday-trading-in-india-research-2026-03-20.md
@@ -198,3 +199,32 @@ Mains fail; UPS countdown starts. **Priya’s partner** (documented in **printed
 | **Model / data leakage** | **Leakage audit** gate before train/promote; **feature availability** classes enforced in live |
 | **Operator behavioral risk** | **Config lockout** RTH; **intervention journal**; **cooling-off** after loss limits |
 | **Operational catastrophe** | **Kill switch**, **DR print kit**, **trusted human** broker-web path; quarterly **DR evidence** |
+
+## Innovation & Novel Patterns
+
+### Detected Innovation Areas
+
+- **Governance-first composition:** **ML + ensemble + regime filters** are **subordinate** to a **deterministic risk and execution API**—the “product shape” is **control-plane-led**, not model-led. That ordering is **uncommon** in retail signal tools that lead with alpha.
+- **Operational truth in the loop:** **Continuous retraining** and **promotion** are tied to **broker-aligned labels**, **leakage audits**, and **rollback SLAs**—treating **model lifecycle** as part of **capital safety**, not a separate notebook step.
+- **India-shaped degradation contract:** **REST_POLL** and **entry suppression** are **specified behavior**, not outages—reducing the class of bugs where automation **trades blind** on bad granularity.
+- **Paper/live as one spine:** **Identical** decision path up to the **final submission** switch makes “paper proof” **evidentially comparable** to live—a **discipline choice** that many stacks shortcut.
+
+### Market Context & Competitive Landscape
+
+- **Brokers and platforms** own distribution; **differentiation** for this build is **not** “secret indicator” but **survivability**: reconciliation, traceability, staged capital, and **predictable** behavior under **SEBI/NSE/broker** evolution (aligned with research synthesis).
+- **Commoditized pieces** (LSTM, XGBoost, Streamlit, Timescale) are **intentionally boring**; novelty is in **how tightly** they’re coupled to **risk and evidence**.
+
+### Validation Approach
+
+- **Paper and shadow:** **Champion vs challenger** on **live data** with **no capital** (or capped canary) until **metric + ops** gates pass.
+- **Deterministic replay:** **Historical session replay** through the **same** pipeline as live to validate **state machine** and **degraded modes**.
+- **Fault injection:** **WebSocket loss**, **stale features**, **partial fills**, **reject storms**—**release-blocking** scenarios, not ad hoc fire drills.
+- **Regression suite** on **walk-forward** and **stress windows** (brief-style) before any promotion.
+
+### Risk Mitigation
+
+| Innovation risk | Fallback |
+|-----------------|----------|
+| **“Composition” becomes unmaintainable** | **Modular monolith** boundaries, **contract tests** at adapter seams, **feature flags** for risky paths |
+| **Retraining introduces silent harm** | **Promotion veto** by **drawdown / PSI / reconciliation**; **automatic rollback**; **paper-only** on breach |
+| **Overclaiming novelty** | Position as **excellent execution of known practices**, not magic alpha |
