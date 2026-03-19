@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2]
+stepsCompleted: [1, 2, 3]
 inputDocuments:
   - _bmad-output/planning-artifacts/research/technical-ai-powered-nse-bse-intraday-trading-in-india-research-2026-03-20.md
   - _bmad-output/planning-artifacts/research/domain-ai-powered-nse-bse-intraday-trading-in-india-research-2026-03-20.md
@@ -57,3 +57,38 @@ The vision explicitly guards against: **big-bang complexity** before basics; **p
 - **Learning-system posture**: retraining and **champion–challenger** only under **explicit promotion rules**—aligned with **home-class** hardware and **intermediate** ambition without pretending ML fixes bad process.
 - **Operational seriousness**: **separate machine** and **market-hours focus** as a commitment device, not cosplay.
 - **Legible behaviour**: explainable **act / block** decisions and **reconciliation** as the default posture, not a debug-only afterthought.
+
+## Target Users
+
+### Primary Users
+
+**Solo operator — “the builder-trader” (you)**  
+Single primary user: **Darthrax**, using AlgoTrade **only for personal** capital and learning—not as a service to others.
+
+- **Context:** Indian equity **intraday** focus (NSE/BSE per product direction), **ICICI Direct Breeze** as the integration surface, **dedicated machine** active during **market hours** so trading is a deliberate ops shift, not background multitasking.
+- **Skill level:** **Intermediate** technical capability (per project config)—comfortable with APIs, databases, and running a local stack, still **building** markets literacy and **process** discipline in parallel.
+- **Motivation:** Enter **day trading** without an ad hoc stack of tabs, opaque automation, or unstructured trial-and-error; prefer **staged** progress (**paper-first**, **gated live**) and **hard limits** that do not depend on model enthusiasm.
+- **Problem experience today:** “I don’t know where to begin” — fragmented how-tos, unclear safe path from learning to live, and fear of **amplify-by-code** mistakes without traceability.
+- **Success vision:** Year-one **trust** in the **workflow**—reliable runs, **honest** metrics, **explainable** act/block behaviour, **reconciliation** you believe—**without** losing money to chaos while learning. Profit is **not** the defining success metric for year one.
+- **“This is exactly what I needed” moment:** When you can answer, without angst: **why** something traded or **didn’t**, whether **broker state matches** your system, and what gate you’re on toward live—**before** optimising for more alpha.
+
+### Secondary Users
+
+**N/A** — The product is **not** intended for other people to operate or consume as end users. No multi-user accounts, no delegated operators, and no external “client” persona in v1. Third parties (e.g. CA) may consume **exports** you generate; that remains **your** responsibility and **your** data handoff, not an in-product user role.
+
+### User Journey
+
+**Discovery**  
+You encounter friction in starting **disciplined** intraday participation (education noise, broker/API reality, India-specific constraints). You choose **self-hosted** AlgoTrade as the **single spine**: data → features → (later) models → **risk-gated** execution → logs and attribution.
+
+**Onboarding**  
+Stand up the stack on the **trading machine**; connect broker/session reality; start in **paper** (or equivalent) with a **small universe**; verify **health**, **data quality modes**, and **kill switch** behaviour before caring about model sophistication.
+
+**Core usage (market hours)**  
+Monitor **dashboard / alerts**; observe **signals accepted vs suppressed** with reasons; respect **degraded / monitor-only** behaviour when data or broker is untrustworthy; end-of-day (or scheduled) **reconciliation** and review—**routine**, not heroic debugging.
+
+**Success moment (“aha”)**  
+Reconciliation and **explainability** feel **boring and reliable**; paper progression feels **evidence-based** (“I trust the numbers and the gates”), not lucky.
+
+**Long term**  
+**Staged live capital** only after sustained paper discipline; **model and scope** grow **after** replay, risk gateway, and broker truth are boring; the **dedicated machine** stays the boundary between normal life and **market risk**.
