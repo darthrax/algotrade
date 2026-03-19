@@ -1,5 +1,6 @@
 ---
-stepsCompleted: [1, 2, 3, 4]
+stepsCompleted: [1, 2, 3, 4, 5, 6]
+briefCompletedAt: "2026-03-20"
 inputDocuments:
   - _bmad-output/planning-artifacts/research/technical-ai-powered-nse-bse-intraday-trading-in-india-research-2026-03-20.md
   - _bmad-output/planning-artifacts/research/domain-ai-powered-nse-bse-intraday-trading-in-india-research-2026-03-20.md
@@ -182,3 +183,89 @@ Metrics below are **examples** until you wire exact thresholds in implementation
 - **Process-first (“1a”)** → ops + reconciliation KPIs **precede** performance KPIs.  
 - **Dedicated machine** → availability and **session ritual** metrics matter—they’re how you buy **attention** and **fewer mistakes**.  
 - **Solo operator** → every KPI must be **reducible to a checklist** one person can run without a NOC team.
+
+## MVP Scope
+
+MVP is aligned to **Phase 1 + Phase 2** of the long product brief (`docs/AlgoTrade_India_Product_Brief_v1.1.md`, §19): a **paper-trading-complete** loop—**truthful data**, **features**, **models (through ensemble + regime)**, **risk-gated execution API**, **retraining**, **auditability**, and **resilience** under **WebSocket + REST** modes—**without** **live capital**, **production RL**, or **Phase 3+ live ramp** to call the MVP “done.”
+
+### Delivery sequencing (recommended for solo operator)
+
+Phase 1–2 in the long brief is **large** for one person. **Ship in two internal cut lines** while still matching the same end state:
+
+**MVP-A — Truth path (build first)**  
+Ingest + storage + gap fill + dedup + **minimal** feature set + **manual or rule-based** signals + **full risk gateway** + **paper execution** + **logs** + **dashboard** + **alerts**. Goal: **session-stable**, **explainable blocks**, **no mystery state**, broker/session/static-IP **reality** verified on the dedicated machine.
+
+**MVP-B — Learning path (build second)**  
+Backtest / walk-forward + **LSTM** + **ensemble** + **regime** + **retraining** + **promotion rules** + richer feature depth per long brief.
+
+You are still “Phase 1–2 complete” only when **both** cut lines are met; this ordering reduces simultaneous subsystem debugging.
+
+### Core Features
+
+**Phase 1 (Months 1–2) — “data → signal → paper”**
+
+- **Ingestion:** Breeze **WebSocket** + **REST (CRUD)**; **historical bootstrap**, **startup gap fill**, **dedup**/merge, **TimescaleDB** (and archival direction per long brief).
+- **Storage & lineage:** Authoritative **DB**; `data_source` (or equivalent) for **provenance**; schema/migration discipline.
+- **Feature engineering:** Pipeline per brief (indicators, leakage controls, availability classes as applicable)—may be **trimmed** in MVP-A, **expanded** for MVP-B.
+- **Backtesting / simulation clock:** Engine with **realistic costs/slippage** and **no look-ahead**; supports walk-forward style evaluation (MVP-B).
+- **ML Phase 1:** **LSTM** (or equivalent Phase-1 model) with **confidence**; reaches execution only **through** the risk layer.
+- **Paper trading:** **Same code path** as live through risk/execution; **simulated fills** per brief.
+- **Operator surface:** **Basic dashboard** (e.g. Streamlit) + **alerting** (e.g. Telegram).
+
+**Phase 2 (Months 2–3) — “governance + resilience + learning loop”**
+
+- **Ensemble:** **LSTM + XGBoost + rule baseline** (or brief’s three-way agreement pattern); **disagreement** logged/monitored.
+- **Regime detection:** **Trend / chop / high-vol** handling with **threshold / sizing** adjustments per brief.
+- **Risk management:** **Full** pre-trade checks, **position/portfolio limits**, **kill switch**, **order state machine**, **bracket/default order** behaviour; **ML never bypasses** risk.
+- **Execution API:** **FastAPI** internal service as **sole** path from signal to **paper** submission adapter.
+- **Retraining pipeline:** Scheduled retrain with **promotion rules** vs incumbent; **model registry / versioning** (e.g. MLflow local) per brief.
+- **Audit trail:** Append-style logging of signals, orders (paper), model version, config changes, key risk decisions.
+- **Operational resilience:** WebSocket disconnect, **REST polling**, gap backfill, **degraded / monitor-only** when brief forbids new entries on coarse data.
+
+**Engineering enablers (high leverage, not scope creep)**
+
+- **Broker adapter:** **Thin** Breeze boundary with **contract tests**; at least one **mocked** integration path so CI is not market-hours dependent.
+- **Failure-injection drills:** Short **repeatable** checklist (disconnect WS, force poll mode, session expiry/stress, optional clock-sync check)—**pass/fail + notes**—before claiming Phase 2 operational.
+
+### Out of Scope for MVP
+
+**Deferred to Phase 3+ (per long brief §19 and v1.0 out-of-scope where applicable)**
+
+- **Live trading** and **staged live capital** (Phase 3); MVP is **paper-complete**, not live-complete.
+- **RL agent in production** (Phase 4); optional **parallel RL training** is **not** MVP-required if it competes with Phase 1–2 gates.
+- **Multi-user / multi-account**, **mobile app**, **F&O**, **HFT**, **SEBI AIF / third-party fund** — unchanged from long brief.
+- **Full** institutional DR / multi-region ops beyond what Phase 2 implies — **not** MVP unless explicitly promoted later.
+
+**Tax / reporting:** MVP includes **exportable** logs and foundations for **running turnover / P&amp;L**; **full** CA-ready automation (long brief §17 depth) can deepen in **Phase 3** unless you later promote a **minimal** CSV/PDF export into MVP explicitly.
+
+### Internal reconciliation (paper)
+
+**Definition:** On paper, “reconciliation” means **internal ledger coherence**: orders, positions, fills (simulated), and P&amp;L **tie out** from a **single closed-form rule set** (e.g. strict order state machine + event trail), with **zero unexplained transitions** over **N** consecutive sessions (set N when implementing). **Stretch (optional):** read-only **broker** sanity checks where API permits, without relying on live order placement for proof.
+
+### MVP Success Criteria
+
+**Phase 1 gate (long brief §19)**  
+
+- **Walk-forward** (or equivalent) shows **positive risk-adjusted** results **or** a **documented** negative outcome that **blocks** naïve promotion—no silent optimism.
+- **Paper trading** stable **30 days** (milestone within the longer paper runway).
+- **REST fallback** **tested**, not only specified.
+
+**Phase 2 gate (long brief §19)**  
+
+- **Must-have** Phase 2 capabilities **operational** (ensemble, regime, risk, retraining, audit, disconnect/poll modes).
+- **60 days** **cumulative** paper trading **total** (Phase 2 sign-off). **Clarification:** the **30-day** Phase 1 checkpoint is an **early** stability milestone inside the same paper journey—the **60-day** count is **total paper days** from first stable paper session through Phase 2 completion, not “reset at Phase 2.”
+- **Simulated failure** exercises completed per drill checklist; outcomes **logged**.
+
+**Environment readiness (pre–Phase 1 “stable”)**  
+
+- **Static IP**, **session/auth**, and **key** handling match broker/exchange reality per long brief (including noted **April 2026** static-IP / key-rotation constraints)—verified on the **dedicated** machine.
+
+**Cross-phase bars (BMM Success Metrics)**  
+
+- **Block/act** explainability; **kill-switch** drills passed; **no routine** risk-limit edits **during** the locked market-hours window.
+
+### Future Vision
+
+- **Phase 3:** Staged **live** capital, **90**-trading-day-class paper history gate where applicable, deeper **attribution**, fuller **tax reporting**.
+- **Phase 4+:** **Production RL**, broader features, **external capital / legal structure** only if requirements change.
+- **Personal arc:** MVP proves a **serious paper system with governance**; later phases prove **capital under stress** without self-deception.

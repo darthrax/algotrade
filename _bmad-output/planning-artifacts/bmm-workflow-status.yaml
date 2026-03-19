@@ -1,0 +1,6 @@
+# BMM planning artifact tracking (maintained by workflows)
+product_brief:
+  artifact: product-brief-algotrade-2026-03-20.md
+  status: complete
+  completed_at: "2026-03-20"
+  steps_completed: [1, 2, 3, 4, 5, 6]
