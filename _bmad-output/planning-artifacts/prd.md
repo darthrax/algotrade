@@ -4,6 +4,7 @@ stepsCompleted:
   - step-02-discovery
   - step-02b-vision
   - step-02c-executive-summary
+  - step-03-success
 inputDocuments:
   - docs/AlgoTrade_India_Product_Brief_v1.1.md
   - _bmad-output/planning-artifacts/research/market-ai-powered-nse-bse-intraday-trading-in-india-research-2026-03-20.md
@@ -65,3 +66,54 @@ classification:
 | **Operating model** | **Single-operator, self-hosted** (not multi-tenant SaaS) |
 
 **PRD spine:** From market data to **bounded, auditable** broker actions; all other capabilities **observe, explain, or improve** that path—not replace it.
+
+## Success Criteria
+
+### User Success
+
+- **Operator trusts the loop:** Can answer *“what did the model know, what did risk allow, what hit the broker, what filled?”* for any session from **logs + reconciliation**, without ad hoc SQL archaeology.
+- **Paper proves live:** After **≥90 consecutive trading days** in paper, operator has **positive risk-adjusted performance** (brief: Sharpe-oriented framing), **max drawdown within guardrails** (brief: e.g. **<10%** before live scale-up), and **no unexplained broker–internal mismatches** blocking the next session.
+- **Crisis clarity:** Kill switch and **daily loss limit** behave as specified; **Telegram / dashboard** make **degraded mode** (WebSocket vs **REST_POLL**) obvious within **one glance**.
+- **Compliance peace of mind:** Running **turnover** and **tax-ready exports** stay usable for **CA / ITR**; **append-only audit** with **checksum discipline** is maintained.
+
+### Business Success
+
+*(Single-account product: “business” = capital preservation + evidence for scaling capital, not ARR.)*
+
+- **Staged live works:** **25% → 50% → 100%** capital ramp (brief §10.4) only after **explicit human sign-off** at each gate, with **no regression** in reconciliation or drift alerts.
+- **Cost of mistakes bounded:** **Incident recurrence** drops run-over-run; **postmortem actions** close before raising live risk.
+- **Regulatory posture defensible:** Retail algo / broker obligations treated as **release gates** (static IP, session hygiene, traceability)—not a late scramble.
+
+### Technical Success
+
+- **Data integrity:** DB remains **source of truth**; **startup gap fill** and **reconnect backfill** restore **continuous series** before signals; **dedup / source precedence** rules enforced (incl. **poll vs websocket**).
+- **Execution path:** **Pre-trade checks** + **order state machine** cover **partial fills**, **timeouts**, **session boundaries**; **risk layer failure ⇒ no new orders** (fail closed).
+- **Model governance:** **Champion–challenger**, **shadow / canary**, **rollback SLA** (brief §11.5); **no schema / promotion / config that breaks market-hours lock** without breach protocol.
+- **SLOs (measurable):** Meet brief-class targets for **tick freshness**, **signal latency**, **order ack latency**, and **session availability** during RTH; exact numeric thresholds carry from **§24** into build/test plans.
+
+### Measurable Outcomes
+
+| Area | Examples (tune numerically in implementation) |
+|------|-----------------------------------------------|
+| **Paper qualification** | **≥90** trading days; **Sharpe > 0** (or agreed baseline); **drawdown cap**; **reconciliation pass rate** |
+| **Reliability** | **% session** in **WEBSOCKET** vs **REST_POLL**; **gap-fill completion** time; **incident MTTR** |
+| **Model** | **PSI / accuracy drift** vs thresholds; **promotion pass rate**; **rollback events** |
+| **Risk** | **Kill-switch drills**; **daily loss limit** trips; **manual intervention count** |
+
+## Product Scope
+
+### MVP — Minimum Viable Product
+
+Aligned to **brief Phase 1** (months 1–2): **Breeze WebSocket + REST CRUD**, **historical bootstrap**, **startup gap fill**, **dedup/storage**, **feature engineering**, **backtesting engine (simulation clock)**, **LSTM signal path**, **paper trading end-to-end**, **basic Streamlit + alerting**. **Gate:** walk-forward validation **non-trivially positive** on risk-adjusted basis; **30 days** stable paper; **REST fallback** exercised under test.
+
+### Growth Features (Post-MVP)
+
+**Brief Phase 2:** ensemble (LSTM + XGBoost + baseline), **regime detection**, **full risk + pre-trade**, **audit trail completeness**, **WS disconnect → REST_POLL** behavior, **60 days** cumulative paper, **chaos / failure** testing.
+
+**Brief Phase 3:** **staged live** capital, **RL** training in parallel (not necessarily prod), **attribution**, **full tax reporting** depth.
+
+### Vision (Future)
+
+**Brief Phase 4+:** **RL in production ensemble** if shadow beats champion; richer features; **external capital** data model **without** breaking v1 schema.
+
+**Scope note:** Success is measured **first** on **survivability artifacts** (reconciliation, degraded modes, governance), **then** on **PnL metrics**—matching the Executive Summary differentiator.
