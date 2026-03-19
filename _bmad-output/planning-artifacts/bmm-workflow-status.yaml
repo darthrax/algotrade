@@ -4,3 +4,8 @@ product_brief:
   status: complete
   completed_at: "2026-03-20"
   steps_completed: [1, 2, 3, 4, 5, 6]
+
+prd:
+  artifact: _bmad-output/planning-artifacts/prd.md
+  status: complete
+  completed_at: "2026-03-20"

@@ -12,6 +12,7 @@ stepsCompleted:
   - step-08-scoping
   - step-09-functional
   - step-10-nonfunctional
+  - step-11-polish
 inputDocuments:
   - docs/AlgoTrade_India_Product_Brief_v1.1.md
   - _bmad-output/planning-artifacts/research/market-ai-powered-nse-bse-intraday-trading-in-india-research-2026-03-20.md
@@ -43,6 +44,8 @@ classification:
 
 **Author:** Darthrax
 **Date:** 2026-03-20
+
+**Traceability:** Implementation work should map epics and stories to **Functional Requirements** (capability contract), **Non-Functional Requirements**, and **User Journeys**. Source inputs are listed in frontmatter `inputDocuments`.
 
 ## Executive Summary
 
@@ -109,27 +112,27 @@ classification:
 
 ## Product Scope
 
+Phases follow the **authoritative product brief** (Phase 1–4). **MVP depth, journey coverage, closed-loop retraining as Phase‑1 hard requirement, and phase gates** are specified in **Project Scoping & Phased Development**—avoid duplicating that detail here.
+
 ### MVP — Minimum Viable Product
 
-Aligned to **brief Phase 1** (months 1–2): **Breeze WebSocket + REST CRUD**, **historical bootstrap**, **startup gap fill**, **dedup/storage**, **feature engineering**, **backtesting engine (simulation clock)**, **LSTM signal path**, **paper trading end-to-end**, **basic Streamlit + alerting**. **Gate:** walk-forward validation **non-trivially positive** on risk-adjusted basis; **30 days** stable paper; **REST fallback** exercised under test.
+**Brief Phase 1:** ingestion (Breeze WebSocket + REST), bootstrap, gap fill, storage, features, simulation/backtest, LSTM signal path, paper trading, minimal operator UI + alerts. **Gates:** walk-forward discipline; ~30 days stable paper; REST fallback exercised.
 
 ### Growth Features (Post-MVP)
 
-**Brief Phase 2:** ensemble (LSTM + XGBoost + baseline), **regime detection**, **full risk + pre-trade**, **audit trail completeness**, **WS disconnect → REST_POLL** behavior, **60 days** cumulative paper, **chaos / failure** testing.
-
-**Brief Phase 3:** **staged live** capital, **RL** training in parallel (not necessarily prod), **attribution**, **full tax reporting** depth.
+**Brief Phase 2–3:** ensemble + regime, richer risk/pre-trade, REST_POLL hardening, longer paper cohorts, staged live, attribution, tax depth, RL training (parallel / prod per gates).
 
 ### Vision (Future)
 
-**Brief Phase 4+:** **RL in production ensemble** if shadow beats champion; richer features; **external capital** data model **without** breaking v1 schema.
+**Brief Phase 4+:** RL in production if validated; external-capital-ready schema.
 
-**Scope note:** Success is measured **first** on **survivability artifacts** (reconciliation, degraded modes, governance), **then** on **PnL metrics**—matching the Executive Summary differentiator.
+**Ordering:** **Survivability artifacts** (reconciliation, degraded modes, governance) before raw **PnL** emphasis—same as Executive Summary.
 
 ## User Journeys
 
 ### Journey 1 — Primary operator: “Normal RTH day” (success path)
 
-**Priya** runs AlgoTrade on a home PC with static IP. **08:45** she gets the **Telegram morning brief**: watchlist, events, model health, last tick ages. She glances at **Streamlit**: WebSocket **green**, positions flat. **09:15–09:30** she expects **observation-only**—no surprises. After **09:30**, signals may flow; when a **buy** clears the ensemble and regime filters, the **internal API** runs **pre-trade checks**, places a **bracket** order via Breeze, and the dashboard shows **order state** advancing to **POSITION_OPEN**. She checks **SHAP top features** once—not to override, but to sanity-check. **15:20** flat **or** stops/targets hit; **EOD reconciliation** runs. She closes the laptop feeling **bored in a good way**: the system did the boring parts and left an **audit trail**.
+**Priya** runs AlgoTrade on a home PC with static IP. **08:45** she gets the **Telegram morning brief**: watchlist, events, model health, last tick ages. She glances at **Streamlit**: WebSocket **green**, positions flat. **09:15–09:30** she expects **observation-only**—no surprises. After **09:30**, signals may flow; when a **buy** clears the **signal path and risk gates** (ensemble/regime in later phases), the **internal API** runs **pre-trade checks**, places a **bracket** order via Breeze, and the dashboard shows **order state** advancing to **POSITION_OPEN**. She checks **SHAP top features** once—not to override, but to sanity-check. **15:20** flat **or** stops/targets hit; **EOD reconciliation** runs. She closes the laptop feeling **bored in a good way**: the system did the boring parts and left an **audit trail**.
 
 **Climax:** First day she trusts **reconciliation** without opening the broker app for every fill.  
 **Resolution:** Operator shifts from **watching ticks** to **watching SLOs and drift**.
@@ -142,7 +145,7 @@ Aligned to **brief Phase 1** (months 1–2): **Breeze WebSocket + REST CRUD**, *
 
 ### Journey 3 — Operator as “governance admin”: Sunday night change window
 
-After market close, Priya unlocks **config**: adjusts a **confidence** floor or **watchlist** rule. Change is **logged**, **versioned**, and effective **next** session per policy. She reviews **challenger** metrics from the week and approves or **rejects** promotion in **MLflow / registry** workflow. **Climax:** Saying **no** to a model that wins accuracy but fails **drawdown** on hold-out—documented decision. **Resolution:** Monday runs on a **known** policy surface; no “what did we ship Friday?” doubt.
+After market close, Priya unlocks **config**: adjusts a **confidence** floor or **watchlist** rule. Change is **logged**, **versioned**, and effective **next** session per policy. She reviews **challenger** metrics from the week and approves or **rejects** promotion in the **model registry** workflow. **Climax:** Saying **no** to a model that wins accuracy but fails **drawdown** on hold-out—documented decision. **Resolution:** Monday runs on a **known** policy surface; no “what did we ship Friday?” doubt.
 
 **Reveals:** Market-hours lock, human sign-off for promotion, audit of config/model changes.
 
@@ -162,7 +165,7 @@ Mains fail; UPS countdown starts. **Priya’s partner** (documented in **printed
 
 | Journey | Capability areas surfaced |
 |---------|---------------------------|
-| **Normal RTH** | Ingestion health, feature + regime gates, ensemble, risk API, order state machine, bracket orders, dashboard, Telegram brief, SHAP surfacing |
+| **Normal RTH** | Ingestion health, feature gates, signal path, risk API, order state machine, bracket orders, dashboard, Telegram brief, SHAP surfacing (+ ensemble/regime when in scope) |
 | **Feed failure** | WS reconnect, REST poll, entry suppression, gap backfill, staleness gates, operator alerts |
 | **Governance window** | Config lockout, change audit, model registry, champion–challenger, promotion/rollback |
 | **DR / compliance** | Exports, turnover, intervention journal, third-party broker access, DR documentation |
