@@ -9,6 +9,7 @@ stepsCompleted:
   - step-05-domain
   - step-06-innovation
   - step-07-project-type
+  - step-08-scoping
 inputDocuments:
   - docs/AlgoTrade_India_Product_Brief_v1.1.md
   - _bmad-output/planning-artifacts/research/market-ai-powered-nse-bse-intraday-trading-in-india-research-2026-03-20.md
@@ -300,3 +301,55 @@ The **execution plane** is an **internal FastAPI** service: **sole** ingress fro
 | Rate limits | **Internal + broker** token buckets |
 | Versioning | **v1 prefix** when breaking changes occur |
 | SDK | **No external SDK**; **OpenAPI** for internal tooling only |
+
+## Project Scoping & Phased Development
+
+### MVP Strategy & Philosophy
+
+**MVP approach:** **Closed-loop risk-validated MVP** — prove **paper** signal → risk → execution → **outcome labeling** → **nightly retraining** → **promotion/rollback** **without** hand-waving. **Useful** means: every day the system **either** improves the **champion** with evidence **or** **refuses** to ship a worse model. **Survivability** still gates **live** capital, but **learning** is **in the spine**, not post‑MVP.
+
+**Resource requirements:** **1 technical owner** (full-time equivalent) plus **sporadic** CA/legal at **live/tax** gates; **retraining automation** is **non‑negotiable** for a **solo** operator — manual-only training **does not** satisfy MVP.
+
+### MVP Feature Set (Phase 1)
+
+Aligned with **Product Scope — MVP** and **brief Phase 1**, with **retraining elevated** to **must‑ship**.
+
+**Core user journeys supported:**
+
+| Journey | MVP coverage |
+|---------|----------------|
+| **Normal RTH** | **Yes** — primary proof path |
+| **Feed failure / degraded mode** | **Partial** — **detect + alert + suppress entries** required; **full chaos / soak matrix** hardens in **Phase 2** |
+| **Governance window** | **Partial** — **logged config + model lineage** required; **full** UX polish optional |
+| **DR / CA** | **Partial** — **exports + intervention log**; **printed DR** is **process** |
+| **Batch / retraining** | **Yes** — **automated nightly (or post‑session) job**: labels → train → **validate vs permanent hold‑out / agreed gates** → **register** or discard → **promotion only if beats champion on ≥3 of 5 brief metrics** (or explicit relaxed MVP rule **documented**, not silent) |
+
+**Must-have capabilities (deal-breakers if missing):**
+
+- Breeze **WebSocket + REST** ingestion, **bootstrap**, **startup gap fill**, **dedup/write** discipline  
+- **Feature pipeline** + **LSTM** path + **confidence threshold**  
+- **Internal FastAPI** risk path + **paper execution** + **order state** logging  
+- **Backtesting / simulation clock** + **walk-forward** + **leakage audit** discipline  
+- **Retraining pipeline (MVP‑hard):** **scheduled jobs**, **label generation** from stored outcomes, **train/eval**, **model registry**, **champion vs challenger comparison**, **promotion veto** default, **artifact + configuration lineage**  
+- **Minimal** Streamlit + **Telegram** for **health, drift alerts, training success/fail**  
+- **Audit:** signal → order → **model version** correlation; immutable events; **reconciliation** hook (**semi‑manual** broker compare acceptable **only** if **checklist‑explicit**)
+
+**Explicit non-goals for Phase 1:** **RL in production**, **full ensemble**, **full** pre-trade matrix breadth — those stay **Phase 2+** per existing scope (unless promoted later).
+
+### Post-MVP Features
+
+**Phase 2 (growth)** — ensemble + regime, **full** pre-trade surface, **REST_POLL** soak/chaos, longer paper cohorts, **richer** audit UX.
+
+**Phase 3 (live ramp)** — staged **live**, **attribution**, **tax depth**, RL **training** parallel to prod.
+
+**Phase 4 (expansion)** — RL **in prod** if validated; **external capital** schema.
+
+### Risk mitigation strategy
+
+| Class | Risk | Mitigation |
+|--------|------|------------|
+| **Technical** | **Retraining introduces silent harm** | **Promotion gates**, **hold‑out / leakage audit**, **rollback**, **paper‑only** on breach; **alerts** on train **fail** |
+| **Technical** | **Live/paper divergence** | Same execution spine; **replay**; **freshness** gates |
+| **Technical** | **Broker fragility** | Adapter tests; token buckets; **monitor-only** |
+| **Market/regulatory** | **Rule drift** | Compliance checklist per release; **paper-first** |
+| **Resource** | **Solo overload** | **Automate** nightly loop **first**; defer **nice dashboards** before deferring **registry/gates** |
