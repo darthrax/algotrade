@@ -2,6 +2,7 @@
 stepsCompleted:
   - step-01-init
   - step-02-discovery
+  - step-02b-vision
 inputDocuments:
   - docs/AlgoTrade_India_Product_Brief_v1.1.md
   - _bmad-output/planning-artifacts/research/market-ai-powered-nse-bse-intraday-trading-in-india-research-2026-03-20.md
