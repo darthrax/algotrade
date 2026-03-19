@@ -11,6 +11,7 @@ stepsCompleted:
   - step-07-project-type
   - step-08-scoping
   - step-09-functional
+  - step-10-nonfunctional
 inputDocuments:
   - docs/AlgoTrade_India_Product_Brief_v1.1.md
   - _bmad-output/planning-artifacts/research/market-ai-powered-nse-bse-intraday-trading-in-india-research-2026-03-20.md
@@ -419,3 +420,29 @@ Aligned with **Product Scope — MVP** and **brief Phase 1**, with **retraining 
 - **FR37:** The operator can view explainability summaries tied to individual recommendations.  
 - **FR38:** The operator can record a reason when performing a manual override or exceptional action.  
 - **FR39:** The system can enforce stepped live-capital increases only after defined gates and explicit operator confirmation.  
+
+## Non-Functional Requirements
+
+*Omitted: broad **accessibility** (operator-only local console). **Multi-tenant scalability** is out of scope; capacity targets follow the single-node profile in the product brief.*
+
+### Performance
+
+- **Market data:** For active watchlist symbols during RTH, **ingest-to-durable-store** latency meets **p95 / p99** targets in the **operational SLO set** (brief §24; numeric thresholds in implementation checklist).
+- **Decision path:** **Feature-complete → risk decision** meets **SLO** under normal **streaming** conditions; under **degraded quote mode**, behavior matches **Functional Requirements** (no new-entry path when forbidden).
+- **Execution path:** **Submit → broker acknowledgment** meets **SLO** when broker health is normal; sustained breach triggers **escalation / safe-close** runbook.
+- **Operator console:** Primary views (positions, health, mode, last signal time) load within **2 seconds** on typical local hardware under normal load (**smoke-testable**).
+- **Retraining:** Scheduled **train+evaluate** completes inside the **defined overnight window** on the reference profile, or surfaces **failure** to the operator **within 15 minutes** of the **scheduled end** of that window.
+- **Recovery:** After **unplanned restart** during RTH, **gap fill** for the watchlist completes **before** new automated entries are accepted, or the system remains in **blocked-entry** with **explicit** reason.
+
+### Security
+
+- **Secrets:** Broker credentials, session material, and notification tokens are **encrypted at rest** and **never** logged in plaintext.
+- **Access control:** Operator-facing execution or mode APIs on non-loopback binds are **authenticated**; **kill**, **mode change**, and **capital stage** actions require **stronger** trust than read-only health.
+- **Integrity:** Audit and config-change trails follow **tamper-evident** discipline from **Domain-Specific Requirements**; backups use **encrypted** handling.
+- **Network:** Remote access beyond localhost uses **TLS** or equivalent (**recommended default**).
+
+### Integration
+
+- **Broker limits:** Client obeys **documented** broker **rate, burst, and subscription** constraints; sustained limit signals trigger **backoff** and **degraded mode**, not blind retry storms.
+- **Reconciliation:** **Broker vs internal** reconciliation meets **accuracy** targets (no **unexplained** material differences) before **live** is armed for the **next** session, **unless** waived with **audit** reason.
+- **Clock:** System clock stays within **NTP** tolerance required by pre-trade checks; **drift breach** blocks trading until cleared.
