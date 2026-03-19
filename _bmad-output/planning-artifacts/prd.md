@@ -6,6 +6,7 @@ stepsCompleted:
   - step-02c-executive-summary
   - step-03-success
   - step-04-journeys
+  - step-05-domain
 inputDocuments:
   - docs/AlgoTrade_India_Product_Brief_v1.1.md
   - _bmad-output/planning-artifacts/research/market-ai-powered-nse-bse-intraday-trading-in-india-research-2026-03-20.md
@@ -161,3 +162,39 @@ Mains fail; UPS countdown starts. **Priya’s partner** (documented in **printed
 | **Governance window** | Config lockout, change audit, model registry, champion–challenger, promotion/rollback |
 | **DR / compliance** | Exports, turnover, intervention journal, third-party broker access, DR documentation |
 | **Automation** | APScheduler jobs, training orchestration, health endpoints, failure alerts, CI-friendly gates |
+
+## Domain-Specific Requirements
+
+### Compliance & Regulatory
+
+- **SEBI / exchange retail algo direction:** Design for **traceable orders**, **broker API discipline**, and **human-in-the-loop gates** consistent with evolving **retail algorithmic trading** norms (treat exchange circulars and broker implementation as **hard inputs**, not blog opinion).
+- **Algo registration / Algo-ID:** System must support **attribution** of live orders to **strategy/version** metadata where the broker or exchange requires it; exact registration steps remain **broker-confirmed** before live.
+- **Order-rate / surveillance posture:** Architecture stays **well below** thresholds that trigger **mandatory exchange algo registration** unless you **explicitly** choose to register—per brief, avoid >10 orders/sec class behavior by design.
+- **Tax / audit:** **Intraday as business income** framing; **running turnover**; **3-year retention**; **exportable** trade and charge breakdown suitable for **CA / ITR**; awareness of **audit-trap thresholds** (turnover / profit per brief).
+- **Collective investment boundary:** Product positioning stays **single-account / own capital** unless legal structure exists for external money (brief §2.1).
+
+### Technical Constraints
+
+- **Network:** **Static IP** and **session token** lifecycle treated as **availability and compliance prerequisites** for Breeze-class connectivity (brief).
+- **Clock / time:** **NTP discipline**; trading behaviors **keyed to IST exchange session** boundaries (pre-open, RTH, auction, close).
+- **Secrets:** **Encrypted at rest**, **no plaintext** in repo/logs; **rotation** cadence for API, session, Telegram tokens.
+- **Tamper evidence:** **Append-only** trading and config events; **daily checksums** on audit surfaces (brief).
+- **Fail-closed execution:** Risk/execution path **unavailable ⇒ no new risk**; degraded data modes **suppress entries** per policy (e.g. **REST_POLL**).
+- **Privacy (India DPDP-aware):** **Data minimization**, retention limits, access logging for any **personal** data processed by dashboards or notifications; exact legal interpretation **verified** before externalization beyond self-hosted use.
+
+### Integration Requirements
+
+- **ICICI Breeze (primary):** **WebSocket** live quotes + **REST** historical, gap fill, poll fallback; **rate-limit** and **burst** handling per endpoint **as configuration**.
+- **Broker book of record:** **Positions, fills, charges** from broker must **reconcile** to internal state **daily** before **next-day live** activation (brief go/no-go).
+- **Supplementary data:** NSE announcements / indices / optional Yahoo macro—each with **latency class** and **contract** per brief feature matrix.
+- **Notifications:** **Telegram** (or equivalent) for **health, risk, reconciliation** without turning into an unauthenticated share of sensitive data.
+
+### Risk Mitigations
+
+| Risk | Mitigation (product-level) |
+|------|----------------------------|
+| **Regulatory change / interpretation drift** | Versioned **compliance checklist** in release process; **paper-first** default; no silent live |
+| **Broker or API policy change** | **Adapter isolation**; contract tests; **monitor-only** mode when payloads degrade |
+| **Model / data leakage** | **Leakage audit** gate before train/promote; **feature availability** classes enforced in live |
+| **Operator behavioral risk** | **Config lockout** RTH; **intervention journal**; **cooling-off** after loss limits |
+| **Operational catastrophe** | **Kill switch**, **DR print kit**, **trusted human** broker-web path; quarterly **DR evidence** |
