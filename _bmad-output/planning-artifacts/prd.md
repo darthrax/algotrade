@@ -10,6 +10,7 @@ stepsCompleted:
   - step-06-innovation
   - step-07-project-type
   - step-08-scoping
+  - step-09-functional
 inputDocuments:
   - docs/AlgoTrade_India_Product_Brief_v1.1.md
   - _bmad-output/planning-artifacts/research/market-ai-powered-nse-bse-intraday-trading-in-india-research-2026-03-20.md
@@ -353,3 +354,68 @@ Aligned with **Product Scope — MVP** and **brief Phase 1**, with **retraining 
 | **Technical** | **Broker fragility** | Adapter tests; token buckets; **monitor-only** |
 | **Market/regulatory** | **Rule drift** | Compliance checklist per release; **paper-first** |
 | **Resource** | **Solo overload** | **Automate** nightly loop **first**; defer **nice dashboards** before deferring **registry/gates** |
+
+## Functional Requirements
+
+### Market data & instrument universe
+
+- **FR1:** The system can ingest streaming market data for subscribed instruments during the trading session.  
+- **FR2:** The system can retrieve and persist historical price series to backfill gaps and onboard new symbols.  
+- **FR3:** The system can reject or reconcile duplicate and out-of-sequence ticks per defined rules.  
+- **FR4:** The system can detect missing data beyond a defined threshold during market hours and notify the operator.  
+- **FR5:** The system can operate in a degraded quote mode when streaming is unavailable and expose the active mode per instrument.  
+- **FR6:** The operator can maintain a tradable universe using configurable liquidity, price, and event-proximity filters.  
+- **FR7:** The system can block new entries for instruments or sessions where policy forbids trading.  
+
+### Features & inference
+
+- **FR8:** The system can compute features from available market data without using disallowed future information.  
+- **FR9:** The system can emit trade recommendations with direction, confidence, and regime context.  
+- **FR10:** The system can suppress recommendations when required inputs are stale or the active data mode forbids new risk.  
+- **FR11:** The system can persist the feature context used for each recommendation for later audit.  
+
+### Risk & trade execution
+
+- **FR12:** The operator can run the product in a simulated-fill mode or a broker-backed mode with shared decision logic.  
+- **FR13:** The system can evaluate each recommendation against enumerated risk checks before placing orders.  
+- **FR14:** The system can place, amend, and close orders with protective exit parameters according to policy.  
+- **FR15:** The system can advance and terminate order lifecycle states including partial fills, rejects, and timeouts.  
+- **FR16:** The operator can invoke an emergency stop that closes positions and halts new risk until cleared.  
+- **FR17:** The system can enforce position count, concentration, spread, and daily loss constraints.  
+
+### Backtesting & replay
+
+- **FR18:** The system can simulate prior sessions through the same decision pipeline used during live operation.  
+- **FR19:** The operator can compare strategy performance across time splits and benchmarks under a shared cost model.  
+
+### Model training, registry & promotion
+
+- **FR20:** The system can derive training labels from stored recommendations and subsequent price outcomes.  
+- **FR21:** The system can run **scheduled** training jobs that produce candidate models **without** manual ad hoc steps.  
+- **FR22:** The system can store and retrieve **versioned** model artifacts with training data span and configuration lineage.  
+- **FR23:** The system can compare candidate models to the production champion using **agreed performance gates**.  
+- **FR24:** The system can **withhold promotion** when gates fail and retain the prior champion.  
+- **FR25:** The system can **revert** to a prior champion when live monitoring breaches rollback policy.  
+- **FR26:** The operator can **approve or reject** a promotion decision outside market hours when human sign-off is required.  
+
+### Operations & alerting
+
+- **FR27:** The operator can inspect positions, balances, and lifecycle state through a **local** console.  
+- **FR28:** The system can deliver notifications for connectivity, risk, training, and health events through a configured channel.  
+- **FR29:** The system can report readiness and liveness for independent watchdog processes.  
+
+### Compliance & reporting
+
+- **FR30:** The system can export trades, charges, and summaries for accounting and tax workflows.  
+- **FR31:** The system can track cumulative turnover and surface proximity to statutory audit thresholds.  
+- **FR32:** The system can record **immutable** audit trails for recommendations, orders, fills, configuration changes, and model promotions.  
+- **FR33:** The system can produce day-end reconciliation artifacts aligning broker activity with internal records.  
+
+### Configuration, calendar & explainability
+
+- **FR34:** The operator can change risk, universe, and model parameters outside market hours with each change audited.  
+- **FR35:** The system can apply blackout and session-window rules that restrict or throttle new risk.  
+- **FR36:** The system can manage broker session authentication lifecycle without exposing secrets through operator-facing APIs.  
+- **FR37:** The operator can view explainability summaries tied to individual recommendations.  
+- **FR38:** The operator can record a reason when performing a manual override or exceptional action.  
+- **FR39:** The system can enforce stepped live-capital increases only after defined gates and explicit operator confirmation.  
