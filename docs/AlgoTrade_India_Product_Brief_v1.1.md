@@ -1,9 +1,9 @@
-# AlgoTrade India — Product Brief v1.1
+# AlgoTrade India — Product Brief v1.2
 **AI-Powered NSE/BSE Intraday Trading System**
 
 | Field | Value |
 |---|---|
-| Version | 1.1 — Includes CRUD Fallback and Data Strategy |
+| Version | 1.2 — Governance, Execution Realism, and Reliability Enhancements |
 | Status | Draft — For BMAD Processing |
 | Audience | Development Team / AI Agent |
 | Domain | Algorithmic Day Trading, India (NSE/BSE) |
@@ -34,6 +34,10 @@
 18. [Recommended Technology Stack](#18-recommended-technology-stack)
 19. [Phased Delivery Plan](#19-phased-delivery-plan)
 20. [Open Questions and Decisions Required](#20-open-questions-and-decisions-required)
+21. [Data Contract and Feature Availability Matrix](#21-data-contract-and-feature-availability-matrix)
+22. [Execution Policy and Broker API Constraints](#22-execution-policy-and-broker-api-constraints)
+23. [Model Governance and Deployment Controls](#23-model-governance-and-deployment-controls)
+24. [SLOs, Reconciliation, and Operational Readiness](#24-slos-reconciliation-and-operational-readiness)
 
 ---
 
@@ -279,6 +283,21 @@ The model does not observe all listed stocks. A dynamic watchlist defines the un
 - Crude oil price — current level and percentage change from previous close
 - US S&P 500 futures — overnight change, used primarily for pre-market context
 
+### 6.2.1 Feature Availability and Leakage Controls
+
+To prevent look-ahead bias and hidden data leakage, every feature must be tagged with an availability class and enforced both in training and live inference:
+
+- `REAL_TIME`: can be consumed immediately during market hours
+- `DELAYED_INTRADAY`: available intraday but with known delay/latency
+- `EOD_ONLY`: available only after market close; never usable for same-day intraday signal generation
+
+Rules:
+
+- Any feature tagged `EOD_ONLY` is excluded from live intraday inference and from backtest bars before its publication time
+- Training pipelines must simulate actual publication/arrival latency for `DELAYED_INTRADAY` features
+- If an external feature source is unavailable intraday, feature value is set to `MISSING` with explicit missingness flags; no forward-fill beyond configured TTL
+- A pre-training leakage audit runs on every dataset version and blocks model training if timing violations are detected
+
 ### 6.3 Temporal Features
 
 - Time of day encoded cyclically (sine and cosine of the minute within trading session)
@@ -394,7 +413,7 @@ All parameters are configurable but require explicit human confirmation to chang
 
 ### 9.1 Position-Level Controls
 
-- Maximum single position size: configurable percentage of total capital (default: 95% single-stock, 30% per stock for multi-stock mode)
+- Maximum single position size: configurable percentage of total capital (default: 25% single-stock, 20% per stock for multi-stock mode in Phase 1)
 - Stop-loss: mandatory for every open position, set at order placement time (default: -1.5%)
 - Profit target: set at order placement time (default: +2.0%)
 - Maximum holding time: any position open at 15:20 IST is automatically closed
@@ -467,6 +486,22 @@ All order activity passes through an internal FastAPI service — the sole inter
 | `FLAT` | Position closed — terminal, outcome logged |
 | `ERROR` | Unexpected state — safe-close procedure initiated |
 
+Execution policy requirements:
+
+- Partial fills are first-class states; risk checks continue until fully filled or cancelled
+- Order rejection handling includes bounded retry logic with reason-code aware backoff
+- Cancel/replace is allowed only within configured limits to avoid runaway order churn
+- Any order not acknowledged within timeout enters `ERROR` and triggers safe-close workflow
+- Exchange session boundaries (pre-open, auction, post-close) enforce mode-specific order restrictions
+
+### 10.2.1 Broker and Exchange Constraint Controls
+
+- Broker REST/WebSocket/API rate limits are treated as hard constraints with per-endpoint token buckets
+- Max subscription count, max request burst, and session token TTL are externalized in configuration
+- If broker returns stale, empty, or malformed payloads above threshold, system enters degraded mode (`monitor-only`) and suppresses new entries
+- Symbol-level tradeability gate blocks signals for instruments on surveillance/restriction lists (ASM/GSM/trade-for-trade/corporate suspension)
+- Quantity freeze limits and lot-size constraints are validated pre-order to prevent exchange-side rejections
+
 ### 10.3 Paper Trading Mode
 
 - Identical to live mode except: `ORDER_SENT` step simulates a fill at current mid-price plus a configurable slippage factor
@@ -505,6 +540,14 @@ Each stage transition requires explicit human sign-off and is logged.
 - If the new model does not pass, the current model is retained and the failure is logged
 - Every model version archived with training date, data date range, validation metrics, and git commit hash
 
+### 11.5 Champion-Challenger and Rollback Policy
+
+- Current production model is the Champion; every candidate is a Challenger evaluated in shadow mode first
+- Challenger promotion requires passing statistical and risk gates on rolling out-of-sample windows
+- Rollout policy: paper shadow -> limited-capital canary -> full deployment
+- Rollback SLA: any severe degradation alert triggers automatic rollback to last stable Champion within 5 minutes
+- No model deployment, parameter mutation, or feature schema change is permitted during market hours
+
 ### 11.3 Model Drift Detection
 
 - Population Stability Index (PSI) calculated daily on prediction confidence distributions — PSI above 0.2 triggers alert
@@ -536,6 +579,12 @@ Each stage transition requires explicit human sign-off and is logged.
 - First 15 minutes of trading (09:15 to 09:30 IST): observation only, no new positions
 - Last 10 minutes of trading (15:20 to 15:30 IST): no new positions, existing positions managed to stops
 
+### 12.4 Regime-Change and Confidence-Collapse Safeguards
+
+- If rolling live precision or win-rate falls below configured floor over N recent trades, new entries are throttled
+- If model disagreement rate or uncertainty rises above threshold, system downgrades to rule-based baseline signals
+- If collapse conditions persist beyond configured duration, system automatically switches to paper-only mode pending human review
+
 ### 12.3 Calendar Data Source
 
 - NSE publishes the holiday calendar annually — loaded into the system at the start of each calendar year
@@ -566,6 +615,7 @@ A local web dashboard (Streamlit) provides a single-screen operational view duri
 - Dead man's switch alert: main system has not responded in more than 5 minutes
 - Model drift alert: PSI threshold exceeded or accuracy degradation detected
 - Morning briefing (08:45 IST): watchlist, events, capital status, model health, data source status
+- Daily reconciliation alert (after close): broker vs internal positions/fills/charges mismatch summary
 
 ### 13.3 Dead Man's Switch
 
@@ -627,6 +677,21 @@ A physical printed document stored securely must contain:
 - Instructions for closing all positions manually via the broker web interface
 - Contact details of a technically-capable trusted person who can execute the above steps
 
+### 14.6 Disaster Recovery Drills and Targets
+
+- Quarterly DR drills are mandatory and evidence must be archived
+- Recovery Time Objective (RTO): trading-safe state restoration within 30 minutes
+- Recovery Point Objective (RPO): maximum 1 minute market data loss for active watchlist
+- Drill report must include timeline, deviations, and corrective actions
+
+### 14.7 Security and Secrets Management
+
+- All broker/API credentials stored in encrypted secrets manager; no plaintext secrets in repo or logs
+- API keys, session secrets, and Telegram tokens rotated on a scheduled cadence and on incident
+- Least-privilege access enforced for internal services and operator accounts
+- Encrypted backups with periodic restore validation are mandatory
+- Incident response runbook covers credential compromise, unauthorized trading activity, and data tampering scenarios
+
 ---
 
 ## 15. Performance Tracking and Attribution
@@ -658,6 +723,12 @@ A physical printed document stored securely must contain:
 - Every trade log entry records the model version ID that generated the signal
 - Performance metrics computed separately for each model version
 - Enables precise measurement of whether a model update improved or degraded performance
+
+### 15.5 Daily Broker Reconciliation
+
+- End-of-day reconciliation compares broker contract notes/tradebook with internal execution logs
+- Mandatory checks: positions, fills, fees/charges, timestamps, and net P&L
+- Any unresolved mismatch blocks next-day live mode until cleared or explicitly waived with audit note
 
 ---
 
@@ -706,6 +777,12 @@ A physical printed document stored securely must contain:
 - Running turnover tracked continuously
 - Alert generated when turnover crosses 80% of the mandatory audit threshold (Rs. 10 crore)
 
+### 17.4 Compliance Operations Cadence
+
+- Monthly CA-ready package generated automatically (tradebook, turnover, charges, P&L, intervention logs)
+- Advance tax estimate support report generated quarterly
+- Export schema is versioned to maintain continuity across accounting periods
+
 ### 17.3 Future: External Capital Accounting
 
 - The data model must accommodate separate capital accounts for multiple investors without a breaking schema change
@@ -752,8 +829,8 @@ A physical printed document stored securely must contain:
 | Phase | Scope | Gate Criterion |
 |---|---|---|
 | Phase 1 (Months 1–2) | Data ingestion (WebSocket + REST CRUD), historical bootstrap, gap fill, dedup layer, storage, feature engineering, backtesting engine, LSTM model, paper trading, basic dashboard and alerting | Walk-forward validation shows positive risk-adjusted returns. Paper trading running stably for 30 days. REST fallback tested and verified. |
-| Phase 2 (Months 2–3) | Ensemble layer, regime detection, full risk management, pre-trade checks, retraining pipeline, complete audit trail, WebSocket disconnection recovery and REST polling mode | All Must Have features operational. 60 days paper trading. All data source modes tested under simulated failure conditions. |
-| Phase 3 (Months 3–4) | Live trading at staged capital levels, RL agent training (parallel, not yet in production), performance attribution, full tax reporting | 90 days paper trading with net positive performance. Staged live deployment passing each gate criterion. |
+| Phase 2 (Months 2–3) | Ensemble layer, regime detection, full risk management, pre-trade checks, retraining pipeline, complete audit trail, WebSocket disconnection recovery and REST polling mode | All Must Have features operational. 60 days cumulative paper trading. All data source modes tested under simulated failure conditions. |
+| Phase 3 (Months 3–4) | Live trading at staged capital levels, RL agent training (parallel, not yet in production), performance attribution, full tax reporting | Minimum 90 consecutive trading days paper mode with positive Sharpe, max drawdown under 10%, and stable reconciliation. |
 | Phase 4 (Ongoing) | RL agent deployed to production ensemble, advanced features, external capital structure if required | RL agent shows improvement over LSTM-only baseline in 30-day live shadow mode before deployment. |
 
 ---
@@ -764,14 +841,84 @@ A physical printed document stored securely must contain:
 |---|---|
 | What is the initial target watchlist size? | Suggest 10–15 liquid Nifty 100 stocks to keep training fast and interpretable |
 | What is the initial confidence threshold? | 65% suggested as default; tune empirically during paper trading |
-| Should the model trade both long and short? | Phase 1 should be long-only; short capability is a Phase 2 decision |
 | What is the REST polling interval during WebSocket failure? | 60 seconds suggested; shorter intervals increase API load |
 | What is the maximum acceptable REST_POLL duration before trading halts? | Suggest: if WebSocket unavailable for more than 30 minutes, suspend all new signals |
 | What backup/DR infrastructure for the dead man's switch? | Free-tier cloud VM or Raspberry Pi on a separate network connection |
-| What is the paper-to-live performance gate threshold? | Suggest: 90 days, positive Sharpe ratio, max drawdown under 10%, win rate above 52% |
 | Will the system trade BSE in addition to NSE? | NSE recommended for v1.0 due to higher equity liquidity |
 | What is the formal legal structure for external capital? | Partnership Firm or LLP — requires CA and legal counsel; out of scope for v1.0 |
 
+### 20.1 Decision Ownership and Deadlines
+
+All open questions must include:
+
+- Decision owner
+- Decision deadline
+- Default action if deadline is missed
+
+This avoids unresolved choices blocking implementation.
+
 ---
 
-> **Document Control:** Version 1.1. This product brief is a living document. All changes must be version-controlled, dated, and logged with the reason for change. The version current at the time of each model deployment is the authoritative reference for that deployment's intended behaviour.
+## 21. Data Contract and Feature Availability Matrix
+
+Every production feature and data field must have a contract entry:
+
+- Source system and endpoint
+- Event timestamp vs ingestion timestamp semantics
+- Expected latency class (`REAL_TIME`, `DELAYED_INTRADAY`, `EOD_ONLY`)
+- Nullability, fallback behavior, and max staleness TTL
+- Data quality checks and failure handling policy
+
+Signal generation is blocked if mandatory contract requirements are not met.
+
+---
+
+## 22. Execution Policy and Broker API Constraints
+
+### 22.1 Canonical Signal Behavior in `REST_POLL` Mode
+
+When stock data source is `REST_POLL`:
+
+- No new entry signals are permitted
+- Existing positions may be managed (stops/exits) only
+- Confidence adjustment logic does not override this suppression rule
+
+### 22.2 Slippage and Cost Realism
+
+Execution simulation and live impact analytics must include:
+
+- Time-of-day spread regimes
+- Volatility-adjusted market impact
+- Liquidity bucket by stock ADV and order size percentile
+- Rejection/partial-fill penalties and retry latency
+
+---
+
+## 23. Model Governance and Deployment Controls
+
+- Champion-challenger registry with explicit promotion criteria
+- Shadow-mode evaluation before any production promotion
+- Canary capital stage required before full-capital rollout
+- Automatic rollback trigger matrix with severity levels
+- Model card mandatory for each deployed version (data range, leakage audit result, known failure modes)
+
+---
+
+## 24. SLOs, Reconciliation, and Operational Readiness
+
+### 24.1 Core SLOs
+
+- Market data freshness SLO (e.g., latest tick age <= 5 seconds during normal market conditions)
+- Signal decision latency SLO (feature-ready to decision <= configured threshold)
+- Order acknowledgment SLO (submission to broker ack <= configured threshold)
+- Service availability SLO during market hours
+
+### 24.2 Reconciliation and Go/No-Go Gate
+
+- Daily broker reconciliation must pass before next-day live activation
+- Any critical reconciliation breach forces paper-only mode until resolved
+- Market-open checklist includes static IP verification, NTP sync, data pipeline health, and broker session validity
+
+---
+
+> **Document Control:** Version 1.2. This product brief is a living document. All changes must be version-controlled, dated, and logged with the reason for change. The version current at the time of each model deployment is the authoritative reference for that deployment's intended behaviour.
