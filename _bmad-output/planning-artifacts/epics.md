@@ -821,3 +821,31 @@ So that I can validate robustness (and avoid overfitting) before promotion.
 7. **Given** comparisons are run repeatedly with the same configuration
    **When** rerun occurs
    **Then** results are stable (idempotent) and do not drift due to non-deterministic components when configuration is unchanged.
+
+### Story 4.1: Training Label Generation from Stored Recommendations + Outcomes (FR20)
+As a technical operator,
+I want the system to derive training labels from stored recommendations and subsequent price outcomes,
+So that retraining uses correctly labeled historical evidence (including reliability differences by data source).
+
+**Acceptance Criteria:**
+1. **Given** a stored recommendation exists with a signal direction (Buy/Sell/Hold context as defined by the pipeline) and a configured target window + threshold
+   **When** label generation runs
+   **Then** the system computes the subsequent price movement within the target window and assigns exactly one label: `Correct Up`, `Correct Down`, `Incorrect`, or `Inconclusive`.
+2. **Given** the recommendation’s signal direction is `Buy`
+   **When** the price rises more than the configured threshold within the target window
+   **Then** the assigned label is `Correct Up`.
+3. **Given** the recommendation’s signal direction is `Sell`
+   **When** the price falls more than the configured threshold within the target window
+   **Then** the assigned label is `Correct Down`.
+4. **Given** the recommendation’s signal direction is `Buy`
+   **When** the price does not rise beyond the configured threshold within the target window
+   **Then** the assigned label is `Incorrect` if direction is wrong per label rules, otherwise `Inconclusive` if price remained within the threshold range.
+5. **Given** the ticks used to generate the label come from multiple data sources
+   **When** the label record is written
+   **Then** the system stores the tick `data_source` used for that label, and flags `REST_POLL`-sourced labels as lower reliability.
+6. **Given** the label-generation job is retried for the same recommendation set (same recommendation ids)
+   **When** label generation re-runs
+   **Then** it does not create duplicate label records for the same recommendation (idempotent label write keyed by recommendation id).
+7. **Given** label generation cannot complete for some recommendations due to missing required post-window price data
+   **When** label generation runs
+   **Then** those recommendations are left in a “pending/not labeled” state (not incorrectly labeled), and the operator/logs can identify which recommendations were not labeled and why.
