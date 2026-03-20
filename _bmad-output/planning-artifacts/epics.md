@@ -170,7 +170,7 @@ FR28: Epic 2 - notifications for connectivity/risk/training/health events
 FR29: Epic 2 - readiness/liveness endpoints for watchdog processes
 FR30: Epic 5 - export trades/charges/summaries for accounting/tax
 FR31: Epic 5 - track cumulative turnover + proximity to audit thresholds
-FR32: Epic 5 - record immutable audit trails for recommendations/orders/fills/config/promotions
+FR32: Epic 2 - record immutable audit trails for recommendations/orders/fills/config/promotions
 FR33: Epic 5 - produce day-end reconciliation artifacts aligning broker vs internal
 FR34: Epic 4 - change risk/universe/model parameters outside market hours (audited)
 FR35: Epic 2 - apply blackout/session-window rules restricting/throttling new risk
@@ -186,7 +186,7 @@ Epic goal: Keep market data continuous, maintain the tradable universe, and enfo
 
 ### Epic 2: Risk-Gated Trading Decisions & Operator Trust Loop
 Epic goal: Convert feature/signal proposals into fail-closed act/block decisions, place/track orders (paper/live parity), enforce risk constraints, and keep the operator informed with stable reason codes and next actions.
-**FRs covered:** FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR15, FR16, FR17, FR27, FR28, FR29, FR35, FR36, FR37, FR38
+**FRs covered:** FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR15, FR16, FR17, FR27, FR28, FR29, FR32, FR35, FR36, FR37, FR38
 
 ### Epic 3: Deterministic Replay & Backtest Evidence
 Epic goal: Simulate prior sessions through the same decision pipeline and compare performance across time splits/benchmarks under a shared cost model.
@@ -197,6 +197,6 @@ Epic goal: Run scheduled training, manage versioned artifacts, compare challenge
 **FRs covered:** FR20, FR21, FR22, FR23, FR24, FR25, FR26, FR34, FR39
 
 ### Epic 5: Reconciliation, Immutable Audit, and Tax-Ready Exports
-Epic goal: Produce day-end reconciliation artifacts, maintain immutable audit trails, and export trade/charge/tax-ready records with turnover tracking.
-**FRs covered:** FR30, FR31, FR32, FR33
+Epic goal: Produce day-end reconciliation artifacts and export trade/charge/tax-ready records with turnover tracking.
+**FRs covered:** FR30, FR31, FR33
 
