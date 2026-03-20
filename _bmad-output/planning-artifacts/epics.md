@@ -793,3 +793,31 @@ So that I can produce a complete record of signals, trades, and P&L with no look
 7. **Given** replay is retried (same replay configuration/version)
    **When** the same date replay is executed again with the same version
    **Then** results remain consistent and the replay output does not produce duplicate/contradictory records for that replay version.
+
+### Story 3.2: Performance Comparison (Time Splits / Benchmarks) under Shared Cost Model (FR19)
+As a technical operator,
+I want the system to compare strategy performance across time splits and benchmarks using the same cost model,
+So that I can validate robustness (and avoid overfitting) before promotion.
+
+**Acceptance Criteria:**
+1. **Given** a replay/backtest run has produced complete records for a date/split
+   **When** the performance comparison tool runs
+   **Then** it aggregates strategy metrics across time splits (e.g., walk-forward windows) and reports risk-adjusted performance.
+2. **Given** benchmarks are configured (random generator, EMA crossover, Nifty 50 buy-and-hold)
+   **When** comparisons are generated for the same time splits
+   **Then** each benchmark is evaluated with the same position sizing and the same transaction cost + slippage model as the strategy.
+3. **Given** transaction cost and slippage models are configured
+   **When** simulated trades are priced in each split
+   **Then** the resulting metrics include brokerage, STT, NSE exchange charges, GST on brokerage, stamp duty, and modeled slippage consistently.
+4. **Given** the replay tool outputs per-trade results with P&L linked to signals
+   **When** benchmark comparisons are computed
+   **Then** the system produces a complete record of every signal and every trade impact used for the comparison.
+5. **Given** the system applies the anti-overfitting mandate (permanent validation set used only for final evaluation)
+   **When** performance is reported for a candidate model
+   **Then** the tool indicates which dataset/period each metric came from and that metrics correspond to out-of-sample evaluation.
+6. **Given** stress-test periods are configured monthly (e.g., worst drawdowns / known crisis windows)
+   **When** stress comparisons run
+   **Then** the tool reports performance across those stress periods in a way that supports operator review and decision gates.
+7. **Given** comparisons are run repeatedly with the same configuration
+   **When** rerun occurs
+   **Then** results are stable (idempotent) and do not drift due to non-deterministic components when configuration is unchanged.
