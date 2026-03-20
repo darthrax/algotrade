@@ -231,3 +231,28 @@ So that the downstream feature/prediction pipeline has a clean, auditable, conti
 7. **Given** a tick is flagged as at/beyond the stock's NSE circuit limit
    **When** the tick is processed
    **Then** it is stored with an indicator/flag for the circuit-limit condition (without causing the ingestion flow to crash).
+
+### Story 1.2: Startup Gap Fill & Historical Bootstrap (Breeze REST)
+As a technical operator,
+I want the system to fill any missing tick history at startup using Breeze REST before opening the WebSocket,
+So that the feature engineering pipeline always runs on a complete, gap-free time series after restarts.
+
+**Acceptance Criteria:**
+1. **Given** the system is starting during a period where watchlist symbols are configured
+   **When** startup gap fill runs
+   **Then** for each configured symbol it queries Breeze REST historical data from the last stored timestamp (or epoch zero if new) up to “now”.
+2. **Given** Breeze REST bootstrap/gap-fill records are retrieved
+   **When** each record is validated
+   **Then** it passes the same data quality pipeline as WebSocket ticks (discard zero price/volume, discard out-of-order, apply tolerance-band checks).
+3. **Given** startup gap fill completes successfully for all watchlist symbols
+   **When** readiness is evaluated for normal ingestion
+   **Then** the system proceeds to open the WebSocket connection only after gap fill completion is confirmed.
+4. **Given** the tick deduplication primary key is `(stock_token, timestamp, resolution)`
+   **When** bootstrap re-runs for already-stored time ranges after a restart
+   **Then** deduplication prevents duplicate rows from being created.
+5. **Given** historical bootstrap/gap-fill writes produce records
+   **When** historical persistence occurs
+   **Then** records are stored with `data_source = 'REST_HISTORICAL'` during bootstrap and `data_source = 'REST_BACKFILL'` for reconnection backfill where applicable.
+6. **Given** startup gap fill cannot complete for one or more symbols
+   **When** the system evaluates readiness
+   **Then** normal signal generation for that symbol is blocked and the operator receives an explicit readiness reason (no silent failure).
