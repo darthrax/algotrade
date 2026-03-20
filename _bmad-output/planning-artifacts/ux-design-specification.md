@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2, 3, 4, 5, 6, 7]
+stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/product-brief-algotrade-2026-03-20.md
@@ -254,3 +254,80 @@ The “novel” element is the interaction contract, not visual flair:
 4. **Completion**
    - Completion is defined as: operator confidence about *today’s permission to act*.
    - After the brief glance, the UI reduces clutter and directs attention to during-session trust rituals (act/block outcomes + reconciliation cues as they appear).
+
+## Visual Design Foundation
+
+### Color System
+Default theme (selectable): **Theme 1 — Nebula Teal**
+- Background: `#0B1220`
+- Panel: `#121C2F`
+- Text: `#E6EDF6`
+- Muted: `#8AA2BF`
+- OK accent: `#2FE6A6`
+- Warning accent: `#FFCC66`
+- Block accent: `#FF5C7A`
+- State accents:
+  - Normal: `#45B7FF`
+  - Degraded (`REST_POLL`): `#FFCC66`
+  - Locked: `#9B8CFF`
+
+Alternate selectable themes:
+**Theme 2 — Graphite Lime**
+- Background: `#0A0D12`
+- Panel: `#141A22`
+- Text: `#F1F5FF`
+- Muted: `#93A4B8`
+- OK accent: `#8CFF2A`
+- Warning accent: `#FFC857`
+- Block accent: `#FF3B5C`
+- State accents:
+  - Normal: `#6BE6FF`
+  - Degraded (`REST_POLL`): `#FFC857`
+  - Locked: `#B78BFF`
+
+**Theme 3 — Charcoal Violet**
+- Background: `#0E0F14`
+- Panel: `#161823`
+- Text: `#F2F4FF`
+- Muted: `#A2AAC2`
+- OK accent: `#46E6B6`
+- Warning accent: `#FFB020`
+- Block accent: `#FF4D6D`
+- State accents:
+  - Normal: `#59C2FF`
+  - Degraded (`REST_POLL`): `#FFB020`
+  - Locked: `#C69CFF`
+
+Color usage rules (to keep meaning unambiguous):
+- Never use color alone for semantic meaning (always pair with stable labels/icons and reason codes).
+- Use accents for “contract” states (Normal / Degraded `REST_POLL` / Locked) and for act/block outcome severity (OK / Warning / Block).
+- Reserve strong accent fills/borders for state headers and act/block decision cards.
+
+Theme selection UX requirement:
+- Provide an “Appearance / Theme” selector (Theme 1 / 2 / 3) in the operator settings panel.
+- Theme changes must not alter any risk/permission semantics—only visual presentation.
+
+### Typography System
+- Typography style: **sans-serif**
+- Goals: crisp readability for fast scanning under stress (morning brief + alert review).
+- Typography tokens (initial targets):
+  - Headings: semibold
+  - Body: regular
+  - Line height: comfortable (prioritize scan speed; avoid cramped tables)
+
+All state and reason-code text must remain readable at the console’s default font size; contrast is treated as a non-negotiable constraint.
+
+### Spacing & Layout Foundation
+- Layout feel: **airy but stable** (avoid reflow surprises as data updates).
+- Spacing rhythm:
+  - Base unit: `8px`
+  - Primary panels: consistent padding and gaps (use 16/24/32 derived from 8px only)
+- Grid rule:
+  - Keep key elements in stable positions (fixed State Header region + consistent panel layout) to reduce cognitive load and “where did it go?” confusion.
+- Component rhythm:
+  - Decision cards and checklists should have consistent padding and predictable vertical flow so the operator can scan them quickly.
+
+### Accessibility Considerations
+- Contrast: ensure minimum contrast for text over background for every theme (target ~4.5:1 for normal text; 3:1 for larger text).
+- Non-color cues: every “Block / Degraded / Locked” must include label + icon + operator-facing reason code.
+- Focus visibility: keyboard focus states must be clearly visible on interactive elements (alerts, confirmation flows, settings).
