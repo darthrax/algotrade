@@ -2,7 +2,7 @@
 project_name: 'algotrade'
 user_name: 'Darthrax'
 date: '2026-03-20T14:51:05+05:30'
-sections_completed: ['technology_stack', 'language_specific']
+sections_completed: ['technology_stack', 'language_specific', 'framework_specific']
 existing_patterns_found: 5
 ---
 
@@ -59,4 +59,33 @@ _Intermediate mode: documented after discovery phase_
 
 - **Async idempotency requirement (implemented in Python async consumers):**
   - Every async handler must tolerate duplicate deliveries using `correlation_id` plus a persisted idempotency key (e.g., `event_id` or equivalent persisted key)
+
+### Framework-Specific Rules (FastAPI + APScheduler)
+
+- **FastAPI control-plane organization:**
+  - Control-plane endpoints live under `src/algotrade/api/routers/` and are composed via `APIRouter`.
+  - “Signal -> deterministic risk/execution -> order submission” must route through `services/risk_execution/` (no bypass paths in routers).
+
+- **Security enforcement for privileged endpoints:**
+  - Privileged routes (`POST /kill`, `POST /mode`) require the shared secret token via `Authorization` header.
+  - Privileged token checks must be implemented as FastAPI dependencies (e.g., via `Depends`) in `security/` modules.
+  - Never log raw tokens or the full `Authorization` header; redact any secret-bearing values.
+
+- **Consistent response/error contracts (FastAPI):**
+  - All endpoints must return the standard wrapper:
+    - Success: `{ "ok": true, "data": ..., "correlation_id": "..." }`
+    - Failure: `{ "ok": false, "error": { "code": "...", "message": "...", "correlation_id": "..." } }`
+  - Use stable machine error `code`s to distinguish validation errors vs risk rejections vs broker transient/permanent failures (even if HTTP status varies).
+
+- **Fail-closed runtime behavior:**
+  - If risk/execution cannot complete (exceptions, downstream unhealthy, etc.), endpoints must return `ok: false` and must not advance order state into “submitted” / “new risk action” pathways.
+
+- **APScheduler job framework rules (background work):**
+  - Scheduled jobs in `src/algotrade/jobs/` derive work from durable records/events in the DB.
+  - Jobs must be idempotent: they must tolerate re-runs and duplicate deliveries using persisted idempotency keys (`event_id`/equivalent) and/or `correlation_id`.
+  - Background jobs must not submit orders directly; they may only trigger/prepare durable events that the decision spine consumes.
+
+- **Startup/readiness gating:**
+  - The FastAPI application lifecycle must ensure broker connectivity health checks and required “gap fill + reconciliation gating” happens before accepting new trading actions.
+  - Health/readiness endpoints in the API must expose enough operator signal for watchdog/dead-man’s-switch semantics.
 
