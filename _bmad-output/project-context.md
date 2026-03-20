@@ -2,8 +2,10 @@
 project_name: 'algotrade'
 user_name: 'Darthrax'
 date: '2026-03-20T14:51:05+05:30'
-sections_completed: ['technology_stack', 'language_specific', 'framework_specific', 'testing_rules', 'code_quality_style', 'development_workflow_rules']
-existing_patterns_found: 5
+sections_completed: ['technology_stack', 'language_rules', 'framework_rules', 'testing_rules', 'quality_rules', 'workflow_rules', 'anti_patterns']
+status: 'complete'
+rule_count: 136
+optimized_for_llm: true
 ---
 
 # Project Context for AI Agents
@@ -13,8 +15,6 @@ _This file contains critical rules and patterns that AI agents must follow when 
 ---
 
 ## Technology Stack & Versions
-
-_Intermediate mode: documented after discovery phase_
 
 ### Core Technologies (planned / architecture-specified)
 - FastAPI backend (`TBD` exact version)
@@ -168,4 +168,52 @@ _Intermediate mode: documented after discovery phase_
 
 - **Operational parity checks as part of implementation:**
   - Ensure deterministic replay/backtest uses the same decision pipeline code paths as live/paper up to the final broker submission switch.
+
+### Critical Don't-Miss Rules
+
+- **No bypass rule (capital risk):**
+  - Never introduce any code path that allows ML/signal generation to directly submit orders.
+  - All order submission must originate from `services/risk_execution/` only.
+
+- **Fail-closed discipline everywhere:**
+  - If risk/execution is unavailable or errors, treat it as “no new risk actions allowed”.
+  - Avoid “best effort” fallbacks that could accidentally submit orders.
+
+- **Suppression must be explicit + auditable:**
+  - Any policy/block-by-policy suppression (e.g., `REST_POLL` entry suppression) must:
+    - emit a traceable event
+    - include a reason code suitable for operator comprehension
+
+- **Idempotency is not optional (duplicate async delivery):**
+  - Every async consumer must tolerate duplicate deliveries without re-triggering capital actions.
+  - Persist and check an idempotency key (e.g., `event_id`) before side effects.
+
+- **Traceability chain is a contract:**
+  - `signal -> correlation_id -> risk decision -> order state changes -> fills/outcomes -> model lineage`
+  - Correlation fields must be propagated through API responses, events, and persisted records.
+
+- **Avoid logging secrets:**
+  - Never log raw `Authorization` tokens or broker credentials.
+  - Redact secret-bearing fields in error logs and traces.
+
+- **Deterministic replay parity:**
+  - Replay/backtest must use the same decision pipeline as live/paper through the point where broker submission is the only divergence.
+
+---
+
+## Usage Guidelines
+
+**For AI Agents:**
+- Read this file before implementing any code
+- Follow ALL rules exactly as documented
+- When in doubt, prefer the more restrictive option
+- Update this file if new patterns emerge
+
+**For Humans:**
+- Keep this file lean and focused on agent needs
+- Update when technology stack changes
+- Review quarterly for outdated rules
+- Remove rules that become obvious over time
+
+Last Updated: 2026-03-20T14:51:05+05:30
 
