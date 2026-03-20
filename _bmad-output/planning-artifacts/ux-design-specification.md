@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2, 3, 4, 5, 6]
+stepsCompleted: [1, 2, 3, 4, 5, 6, 7]
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/product-brief-algotrade-2026-03-20.md
@@ -196,3 +196,61 @@ Custom design system (tokens-first) tailored for a dark Streamlit operator conso
 ### Customization Strategy
 - Start with one dark theme; keep secondary palettes optional for future diagnostics views.
 - Maintain consistent state semantics across the whole UI (colors + labels + icons), so meaning does not depend on color alone.
+
+## 2. Core User Experience
+
+### 2.1 Defining Experience
+The operator’s defining daily interaction is the **Morning Brief Glance**: opening the local console and instantly understanding the day’s operating contract.
+
+In under ~10 seconds, the operator should be able to answer:
+- What data mode/contract are we in (Normal vs Degraded `REST_POLL` vs Locked)?
+- Are entries allowed yet (and if not, when they begin)?
+- What are the top “trust signals” (freshness/readiness indicators) and any must-not-miss alerts?
+
+This turns the start of the day into a predictable ritual: **glance → confidence → action policy**.
+
+### 2.2 User Mental Model
+The operator mentally treats the system like a governed control-plane:
+- The model may *suggest*, but the system’s **risk gates** decide act vs block.
+- **Mode is a contract**, not a status label: degraded mode (`REST_POLL`) changes what the system is permitted to do (not just how “fast” it is).
+- The operator’s job at start-of-day is to confirm **readiness** and **policy constraints**, not to debug internals.
+
+Expected mental questions the UI answers directly:
+- “Can the system place entries right now, yes or no?”
+- “If it can’t, what is the stable reason and what happens next?”
+- “What is being actively managed anyway (e.g., positions/stops), even if entries are suppressed?”
+
+### 2.3 Success Criteria
+The Morning Brief Glance is “successful” when the operator feels:
+- **Comprehension**: mode/contract + entries-allowed policy are understood immediately.
+- **Trust**: the UI provides stable, coded reasons and reflects true system semantics (including suppression-by-policy).
+- **Agency**: there is an obvious next step (e.g., “observe only until 09:30” or “review today’s reconciliation gate”).
+
+Success indicators:
+- The operator can state the day contract and entry permission without opening logs.
+- Degraded/locked states are unambiguously labeled with their behavioral implications.
+- Trading-relevant alerts have a clear operator-next-action (not just a message).
+
+### 2.4 Novel UX Patterns
+The “novel” element is the interaction contract, not visual flair:
+- **Contract-first briefing ritual**: a monitoring-style overview that translates system semantics into “permission to act” rather than raw technical status.
+- **Severity accents repurposed for trading decisions**: Grafana/Datadog-like accent language, but grounded in act/block and policy meaning.
+- **Decision trace readiness**: the UI makes it easy to drill from “what’s happening now” into “why” while preserving context.
+
+### 2.5 Experience Mechanics
+1. **Initiation**
+   - Operator opens the console (or it auto-loads on refresh).
+   - The UI shows a fixed **State Header** at the top (same location every time).
+2. **Interaction**
+   - Operator scans in a consistent order:
+     1) **Contract/Mode**
+     2) **Entries Allowed** (explicit yes/no tied to market-hours policy)
+     3) **Trust Signals** (freshness/readiness + must-not-miss alerts)
+     4) **Next Window Guidance** (what the operator should expect next)
+3. **Feedback**
+   - If degraded/locked: UI communicates “entries suppressed by policy” plus what remains actively managed.
+   - If readiness gaps: UI explains the reason code and provides the next safe action (usually “wait for gap-fill / readiness window”).
+   - The UI never relies on “silence” to imply success.
+4. **Completion**
+   - Completion is defined as: operator confidence about *today’s permission to act*.
+   - After the brief glance, the UI reduces clutter and directs attention to during-session trust rituals (act/block outcomes + reconciliation cues as they appear).
