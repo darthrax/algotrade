@@ -1,0 +1,86 @@
+# generated: 2026-03-20T11:08:04Z
+# last_updated: 2026-03-20T11:08:04Z
+# project: algotrade
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: /home/darthrax/dev/algotrade/_bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-03-20T11:08:04Z
+last_updated: 2026-03-20T11:08:04Z
+project: algotrade
+project_key: NOKEY
+tracking_system: file-system
+story_location: /home/darthrax/dev/algotrade/_bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: backlog
+  1-1-websocket-tick-ingestion-dedup-persistence: backlog
+  1-2-startup-gap-fill-historical-bootstrap-breeze-rest: backlog
+  1-3-missing-data-detection-operator-notification: backlog
+  1-4-degraded-quote-mode-rest-poll-entries-suppressed-by-policy: backlog
+  1-5-tradable-universe-filters-liquidity-price-event-proximity: backlog
+  1-6-policy-gate-block-new-entries-when-trading-is-forbidden-fr7: backlog
+  epic-1-retrospective: optional
+  epic-2: backlog
+  2-1-feature-snapshot-recommendation-suppression-data-mode-freshness-gate-with-immutable-audit-trace: backlog
+  2-2-pre-trade-risk-checks-stable-act-block-decision-trace-no-order-submission-yet: backlog
+  2-3-order-submission-paper-fill-vs-broker-backed-via-risk-execution-state-machine: backlog
+  2-4-emergency-stop-kill-switch-with-two-step-confirm-fail-closed-behavior-and-operator-lock-state-fr16-ux: backlog
+  2-5-broker-adapter-order-acknowledgement-partial-fills-rejects-timeouts-state-handling-fr15: backlog
+  2-6-enforce-position-concentration-spread-daily-loss-constraints-fr17: backlog
+  2-7-operator-console-positions-lifecycle-inspection-fr27-ux-state-visibility: backlog
+  2-8-operator-notifications-for-connectivity-risk-training-and-health-fr28-ux: backlog
+  2-9-readiness-liveness-endpoints-fr29-dead-mans-switch-semantics: backlog
+  2-10-blackout-and-session-window-rules-fr35-restrict-throttle-new-risk-with-ux-contract-display: backlog
+  2-11-broker-session-authentication-lifecycle-without-exposing-secrets-fr36: backlog
+  2-12-explainability-summaries-tied-to-each-recommendation-fr37: backlog
+  2-13-manual-override-reason-capture-fr38-auditable-operator-intent: backlog
+  2-14-bracket-orders-protective-exit-parameters-fr14: backlog
+  epic-2-retrospective: optional
+  epic-3: backlog
+  3-1-historical-replay-tool-with-simulation-clock-data-source-hierarchy-fr18: backlog
+  3-2-performance-comparison-time-splits-benchmarks-under-shared-cost-model-fr19: backlog
+  epic-3-retrospective: optional
+  epic-4: backlog
+  4-1-training-label-generation-from-stored-recommendations-outcomes-fr20: backlog
+  4-2-nightly-retraining-procedure-model-version-archival-fr21: backlog
+  4-3-model-artifact-storage-retrieval-training-data-span-lineage-fr22: backlog
+  4-4-candidate-vs-champion-comparison-using-agreed-performance-gates-fr23: backlog
+  4-5-withhold-promotion-when-gates-fail-fr24: backlog
+  4-6-revert-to-prior-champion-when-live-monitoring-breaches-rollback-policy-fr25: backlog
+  4-7-operator-approve-reject-promotion-outside-market-hours-fr26: backlog
+  4-8-stepped-live-capital-increases-only-after-defined-gates-and-explicit-operator-confirmation-fr39: backlog
+  epic-4-retrospective: optional
+  epic-5: backlog
+  5-1-tax-ready-trade-log-turnover-tracking-ca-itr-exports-fr30-fr31: backlog
+  5-2-day-end-broker-internal-reconciliation-artifacts-mismatch-governance-fr33: backlog
+  epic-5-retrospective: optional
