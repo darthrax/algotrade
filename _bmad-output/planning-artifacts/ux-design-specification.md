@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/product-brief-algotrade-2026-03-20.md
@@ -360,3 +360,123 @@ Direction 2 best supports your core operator need: emotional certainty through c
   - Panel B: decision trace card (act/block with stable reason code + “what to do next”) + a reconciliation status block (pass/fail/waiver cues)
 - Ensure theme switching is visual-only: it must not change any semantics, labels, or permission/risk logic.
 - Ensure every “suppressed” or “blocked” outcome ends with an explicit next action (ack/wait/reconcile/kill switch with confirmation).
+
+## User Journey Flows
+
+### Journey 1 — Normal RTH day (success path)
+For a normal trading day, the operator performs a morning contract-glance, observes during the early window, then accepts act/block decisions once entries are allowed; the day ends with reconciliation closure.
+
+```mermaid
+flowchart TD
+  A[Morning brief: state header + entries-allowed] --> B{Entries allowed by policy?}
+  B -- No --> C[Observation-only window<br/>UI explains expectation]
+  C --> D{Signal proposes trade?}
+  D -- No --> C
+  D -- Yes --> E[Decision trace card<br/>risk gate explains act/block]
+  B -- Yes --> F[Trading contract: freshness + readiness OK]
+  F --> E
+  E --> G{Risk gate passes pre-trade checks?}
+  G -- No --> H[Result BLOCK + stable reason code + next action<br/>(wait/retry later)]
+  G -- Yes --> I[Submit bracket via internal API]
+  I --> J[Order state machine updates<br/>ORDER_SENT -> ORDER_CONFIRMED -> POSITION_OPEN]
+  J --> K{Exit condition met?}
+  K -- No --> J
+  K -- Yes --> L[Exit sent -> exit confirmed -> FLAT]
+  L --> M[EOD reconciliation]
+  M --> N{Broker vs internal match?}
+  N -- Pass --> O[Reconciled ✅ closure narrative]
+  N -- Needs waiver --> P[Blocked next-day live<br/>waiver path with audit note]
+```
+
+### Journey 2 — Feed dies; entries must stop (edge / failure)
+When WebSocket drops, the UI switches the contract to degraded mode (`REST_POLL`) and makes suppression-by-policy unmistakable; exits/stops remain managed, and entries are blocked until readiness gates pass.
+
+```mermaid
+flowchart TD
+  A[WebSocket drop] --> B[Connectivity alert + mode contract update]
+  B --> C[Degraded contract: `REST_POLL` + entries suppressed by policy]
+  C --> D[Next action guidance<br/>ack/observe; no config flipping]
+  D --> E[Stop managing entries; continue monitoring positions/exits]
+  E --> F{New entry signal produced?}
+  F -- Yes --> G[Decision trace shows policy suppression<br/>Result BLOCK (no rogue entries)]
+  F -- No --> H[Monitor-only continues]
+  G --> I[Verify no rogue entry attempts]
+  H --> J[Reconnect + backfill in progress]
+  J --> K{Freshness + data-mode gates pass?}
+  K -- No --> C
+  K -- Yes --> L[Return to Normal contract<br/>entries allowed resumes]
+```
+
+### Journey 3 — Governance admin (change window)
+During locked hours, the UI denies risk-increasing changes with an explicit “why locked” and “when allowed.” Outside lock, the operator reviews and approves/rejects promotion/config changes with audit context.
+
+```mermaid
+flowchart TD
+  A[Market hours policy check] --> B{Locked window?}
+  B -- Yes --> C[UI disables controls<br/>shows why locked + next allowed time]
+  C --> B
+  B -- No --> D[Operator opens review/approval cards]
+  D --> E[Config/model change request logged + versioned preview]
+  E --> F[Model registry view<br/>Champion vs Challenger]
+  F --> G{Approve promotion?}
+  G -- No --> H[Denial recorded; champion remains active]
+  G -- Yes --> I[Approval recorded; effective next session]
+  H --> J[Next session state header confirms contract + version lineage]
+  I --> J
+```
+
+### Journey 4 — Trusted person / incident (DR + compliance evidence)
+When a crisis requires human intervention, the UI provides incident clarity, kill/flatten guidance, and evidence packaging so the operator can close the loop with confidence.
+
+```mermaid
+flowchart TD
+  A[Incident / UPS countdown] --> B[Critical banner + DR context contract]
+  B --> C{Automation safe to continue?}
+  C -- Yes --> D[Continue governed operations]
+  C -- No --> E[UI prompts DR steps<br/>two paths: trusted person + evidence packaging]
+  E --> F[Trusted person executes broker web/manual flatten per printed DR]
+  F --> G[UI reflects broker-aligned reconciliation status]
+  G --> H{Broker vs internal match?}
+  H -- Pass --> I[Incident closure ✅ + exports ready pointers]
+  H -- Needs waiver --> J[Blocked/needs clarification<br/>waiver path with audit note]
+  I --> K[CA-ready exports + intervention log pointers]
+  J --> K
+```
+
+### Journey 5 — Automation / batch (nightly retraining + health)
+Nightly retraining and periodic health checks run mostly headless; the UI surfaces run outcomes and requires human approval only where policy gates demand it.
+
+```mermaid
+flowchart TD
+  A[22:00 retraining trigger] --> B[Run ID + status events in UI]
+  B --> C[Labels -> train -> evaluate vs champion]
+  C --> D{Gates pass + leakage audit pass?}
+  D -- No --> E[Promotion blocked<br/>failure summary + reason codes]
+  E --> F[Operator notified for review]
+  D -- Yes --> G[Challenger ready for promotion review]
+  G --> H{Human sign-off required?}
+  H -- Yes --> I[Governance approval card outside market hours]
+  I --> J{Operator approves?}
+  J -- No --> K[Discard challenger; champion unchanged]
+  J -- Yes --> L[Approve; schedule next allowed activation]
+  H -- No --> L
+  L --> M[Dead-man’s-switch / GET /health checks]
+  M --> N{Health responsive?}
+  N -- No --> O[Health alert + operator next actions]
+  N -- Yes --> P[OK + routine stability confirmation]
+```
+
+### Journey Patterns
+- Always-visible **State/Contract header** before deep decision content (Normal vs Degraded `REST_POLL` vs Locked).
+- Every act/block outcome ends with **stable reason codes** and a **clear next action** (never “silence implies success”).
+- Decision trace drill-down follows a fixed causal chain: freshness/data mode -> feature/signal snapshot -> risk verdict -> order outcome (or explicit suppression).
+- Reconciliation is designed as a workflow: pass/fail/waiver signals with explicit implications (blocks next-day live vs waiver path).
+- Locked-window UX denies risk-increasing actions with “why locked” + “when allowed.”
+- Incidents produce defensible closure: evidence pointers + reconciliation readiness cues.
+
+### Flow Optimization Principles
+- Start each flow with the operator’s “permission to act” understanding to minimize time-to-value.
+- Reduce cognitive load via stable visual placement (header, decision card, reconciliation cues).
+- Prevent misinterpretation under stress by making degraded/policy suppression explicit and consistent.
+- Use progressive disclosure: overview first, trace/justification on demand, reconciliation at the end.
+- Ensure recovery paths are explicit: reconnect/backfill sequences, waiver gates, approval timing.
