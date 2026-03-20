@@ -281,3 +281,28 @@ So that the feature window is flagged as unreliable and entries are handled safe
 6. **Given** the system’s data mode is degraded (`REST_POLL`)
    **When** missingness detection logic runs
    **Then** it follows the intended degraded-mode semantics: monitoring/alerting stays accurate while new entries remain suppressed by policy.
+
+### Story 1.4: Degraded Quote Mode (`REST_POLL`) + Entries Suppressed by Policy
+As a technical operator,
+I want the system to switch into degraded quote mode (`REST_POLL`) when streaming is unavailable and suppress new entries by policy,
+So that exits/stops remain managed but the system never opens new risk on insufficient granularity.
+
+**Acceptance Criteria:**
+1. **Given** the system is trading in normal contract mode and WebSocket connectivity drops
+   **When** streaming cannot be restored within the configured reconnect window
+   **Then** it switches the per-instrument data/mode contract to `REST_POLL`.
+2. **Given** the system enters `REST_POLL`
+   **When** prediction/recommendation logic runs for a symbol
+   **Then** the system does not allow new position entries (entries suppressed by policy) and emits a stable reason code tied to data mode/granularity.
+3. **Given** positions already exist during the mode transition
+   **When** in `REST_POLL`
+   **Then** the system continues to manage exits/stops/position monitoring, but does not create new entries.
+4. **Given** the system remains in `REST_POLL`
+   **When** the operator views current state in the console/dashboard
+   **Then** the active data mode for the instrument is displayed correctly and is consistent with the backend contract.
+5. **Given** the system later reconnects WebSocket successfully
+   **When** gap backfill completes
+   **Then** the system returns from `REST_POLL` to normal ingestion for that symbol, and new entries are allowed only after freshness/data-mode gates pass.
+6. **Given** `REST_POLL` is active and a prediction would otherwise trigger a BUY/SELL recommendation
+   **When** the policy suppresses the entry
+   **Then** the suppression is traceable in logs/audit evidence (no silent success), and the operator can see the “what changed / why blocked” reason.
