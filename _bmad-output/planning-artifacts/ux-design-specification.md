@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2, 3, 4, 5]
+stepsCompleted: [1, 2, 3, 4, 5, 6]
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/product-brief-algotrade-2026-03-20.md
@@ -177,3 +177,22 @@ The UI should make these actions nearly automatic:
 
 **What to Avoid**
 - Avoid ambiguity in suppressed states: “silence” must never be interpretable as success.
+
+## Design System Foundation
+
+### 1.1 Design System Choice
+Custom design system (tokens-first) tailored for a dark Streamlit operator console.
+
+### Rationale for Selection
+- Streamlit-first UI favors a tokens approach (colors, spacing, typography) that can be applied consistently across existing Streamlit components.
+- “Airy layout” + accent-led states (Normal vs Degraded `REST_POLL` vs Locked) is easiest to guarantee when you control the visual language directly.
+- You only need a small, repeatable set of components (state header, act/block cards, alert severity banners, reconciliation checklist, decision trace drill-down), so a full external component library is optional.
+
+### Implementation Approach
+- Define design tokens: `--bg`, `--panel`, `--text`, `--muted`, `--accent`, and semantic accents like `--status-ok`, `--status-warn`, `--status-block`.
+- Define a spacing and layout grid that preserves “airiness” (consistent margins/padding, stable card sizes, predictable panel locations).
+- Implement a small component pattern library (even if internally “just functions/templates”): state header, decision card, timeline/trace, reconciliation checklist, and two-step confirm modal.
+
+### Customization Strategy
+- Start with one dark theme; keep secondary palettes optional for future diagnostics views.
+- Maintain consistent state semantics across the whole UI (colors + labels + icons), so meaning does not depend on color alone.
