@@ -331,3 +331,28 @@ So that the system trades only eligible instruments per policy.
 6. **Given** the operator updates universe filter configuration
    **When** the update occurs outside market hours
    **Then** the change is applied to the next refresh cycle and the update is audit-logged.
+
+### Story 1.6: Policy Gate — Block New Entries When Trading Is Forbidden (FR7)
+As a technical operator,
+I want the system to block new position entries for instruments or sessions where policy forbids trading,
+So that the system never opens new risk during blackout windows, observation-only windows, or configured restriction periods.
+
+**Acceptance Criteria:**
+1. **Given** the system is within a full trading blackout (no new positions), or an observation-only window, or a configured “no new positions” period
+   **When** a strategy signal would otherwise produce an entry for an instrument/session
+   **Then** the system suppresses the entry decision and does not place a new order for that instrument/session.
+2. **Given** there are existing open positions when policy restriction becomes active
+   **When** the system processes market updates during the restricted window
+   **Then** it continues to manage exits/stops/position monitoring without forcing closes, while still blocking new entries.
+3. **Given** an instrument is excluded by universe filters or otherwise not eligible by policy
+   **When** an entry is evaluated
+   **Then** the entry is blocked and the operator is shown an operator-facing “entries allowed” state consistent with policy.
+4. **Given** the operator console UI is open
+   **When** policy forbids trading for the current session/window
+   **Then** the UI shows `Entries allowed: No` and includes a reason label (not only a backend state).
+5. **Given** the policy window ends (e.g., observation-only time passes, blackout ends, or restriction period is over)
+   **When** the system evaluates new signals
+   **Then** entries become allowed again only after data readiness requirements (freshness/data-mode gates) are satisfied.
+6. **Given** the system is in degraded mode (`REST_POLL`)
+   **When** policy restrictions apply at the same time as degraded semantics
+   **Then** degraded semantics remain correct (entries suppressed due to granularity), and policy suppression does not incorrectly “re-open” entries due to mode transition timing.
