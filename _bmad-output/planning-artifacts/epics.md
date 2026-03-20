@@ -877,3 +877,31 @@ So that model promotion/rollback is based on complete evidence without ad hoc ma
 7. **Given** the scheduled job is triggered again with the same run configuration (idempotent retry)
    **When** the second trigger is handled
    **Then** it does not create duplicate/contradictory archived model versions for the same run id/config.
+
+### Story 4.3: Model Artifact Storage / Retrieval + Training Data Span & Lineage (FR22)
+As a technical operator,
+I want the system to store and retrieve versioned model artifacts with training data span and configuration lineage,
+So that every promotion/rollback decision is traceable and reproducible across time.
+
+**Acceptance Criteria:**
+1. **Given** a candidate model is trained successfully
+   **When** the training pipeline archives the model
+   **Then** it stores a versioned model artifact record (including model version id).
+2. **Given** the training run has metadata (training date, data date range, validation metrics, and git commit hash)
+   **When** the model artifact is archived
+   **Then** the artifact record persists that metadata for lineage.
+3. **Given** the model artifact storage supports retrieval by version/model id
+   **When** the operator or promotion workflow requests an artifact
+   **Then** the system retrieves the correct artifact corresponding to that version id.
+4. **Given** the training pipeline uses a configuration surface (feature availability/config/policy knobs)
+   **When** the model is archived
+   **Then** the system stores configuration lineage (what config produced this artifact), without leaking secrets.
+5. **Given** multiple artifacts exist over time for different training windows
+   **When** older artifacts are queried
+   **Then** retrieval returns the correct artifact and metadata, with no cross-version contamination.
+6. **Given** scheduled retraining runs are retried or re-triggered
+   **When** the same training run id/config is archived again
+   **Then** the system is idempotent: it does not create duplicate artifacts for the same run id/config.
+7. **Given** an artifact record is used for replay/backtest reproducibility (where required later)
+   **When** a replay loads an archived model version
+   **Then** the replay uses the exact archived model artifact associated with the stored lineage.
