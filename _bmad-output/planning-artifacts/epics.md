@@ -905,3 +905,31 @@ So that every promotion/rollback decision is traceable and reproducible across t
 7. **Given** an artifact record is used for replay/backtest reproducibility (where required later)
    **When** a replay loads an archived model version
    **Then** the replay uses the exact archived model artifact associated with the stored lineage.
+
+### Story 4.4: Candidate vs Champion Comparison using Agreed Performance Gates (FR23)
+As a technical operator,
+I want the system to compare each challenger model against the production champion using agreed performance gates,
+So that promotion decisions are evidence-based and reproducible.
+
+**Acceptance Criteria:**
+1. **Given** the system has a production model designated as the **Champion**
+   **When** a challenger candidate model is available (trained and archived)
+   **Then** it evaluates the challenger and champion using agreed performance gates on rolling out-of-sample windows.
+2. **Given** the agreed performance gates are configured (e.g., accuracy/Sharpe/max drawdown/precision/recall or your agreed 3-of-5 rule)
+   **When** the evaluation runs
+   **Then** the system computes the same metrics for both challenger and champion under identical data windows and cost model.
+3. **Given** the evaluation is run for promotion eligibility
+   **When** the challenger meets all required gates
+   **Then** the system marks the challenger as “Promotion Eligible” and records which gates passed.
+4. **Given** the evaluation is run for promotion eligibility
+   **When** the challenger fails one or more gates
+   **Then** the system marks “Promotion Not Eligible” and records which gates failed and why.
+5. **Given** evaluation outputs must be auditable
+   **When** the comparison completes
+   **Then** the system writes immutable evidence tying: champion version, challenger version, training window, evaluation windows, and computed metrics.
+6. **Given** the comparison workflow may be retried
+   **When** the same candidate/champion pair and gate configuration is re-evaluated
+   **Then** results are idempotent: the system does not create contradictory records, and it reuses the same evidence for that evaluation context.
+7. **Given** the anti-overfitting mandate is enabled
+   **When** metrics are computed
+   **Then** the system flags if the permanent validation set was improperly used for training/hyperparameter tuning and indicates the mandate violation in evidence.
