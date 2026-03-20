@@ -7,6 +7,7 @@ stepsCompleted:
   - step-03-epic-coverage-validation
   - step-04-ux-alignment
   - step-05-epic-quality-review
+  - step-06-final-assessment
 documentsIncluded:
   prd: _bmad-output/planning-artifacts/prd.md
   architecture: _bmad-output/planning-artifacts/architecture.md
@@ -227,3 +228,19 @@ No major misalignments detected between UX, PRD, and Architecture. Key UX elemen
 ### 🟡 Minor Concerns
 - Story 3.x and 4.x acceptance criteria focus heavily on correctness/evidence and idempotency, but may benefit from adding one explicit “data provider unavailable / partial payload / replay scheduler failure” scenario per story (to strengthen the operational failure-mode traceability pattern used in earlier epics).
 - Some stories intentionally blend UI/UX requirements (e.g., kill switch two-step confirm) with back-end behavior assertions; that is acceptable for end-to-end readiness, but it increases implementation surface area for a single story. If you want tighter layering, split UI-only vs control-plane-only assertions—but only if you also keep the story independently completable.
+
+## Summary and Recommendations
+
+### Overall Readiness Status
+NEEDS WORK
+
+### Critical Issues Requiring Immediate Action
+1. `Epic 3` / `Story 3.1` replay relies on a “current production model” being available; make sure a production/champion model can be obtained (seeded artifact, documented bootstrap mechanism, or an explicit ordering requirement) without requiring forward completion of `Epic 4`.
+
+### Recommended Next Steps
+1. Add/confirm the “initial/seeding mechanism” for the production model used by Epic 3 replay (or document an explicit sequencing rule: Epic 4 must precede Epic 3 for a working replay).
+2. Tighten architecture documentation with concrete operator UI and notification implementations that match the UX spec expectations (confirm whether the operator console is explicitly Streamlit, and whether Telegram integration is used vs “equivalent”).
+3. Add explicit “data provider unavailable / partial payload / replay scheduler failure” acceptance criteria at least once in the replay/performance slice (Story 3.1/3.2), aligning operational failure-mode traceability across the artifact set.
+
+### Final Note
+This assessment identified **5** issues across **3** categories: **1** major dependency-risk, **2** UX-vs-architecture documentation warnings, and **2** minor completeness concerns. Address the critical dependency risk before beginning Phase 4 implementation to prevent mid-sprint structural rework.
