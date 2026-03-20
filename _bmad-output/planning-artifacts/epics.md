@@ -478,3 +478,34 @@ So that the system closes positions and halts all new risk immediately and remai
 8. **Given** the operator console requires strong auth for risk-increasing actions
    **When** kill switch activation is requested
    **Then** unauthenticated/invalid requests are rejected and no position-closing/risk-halt actions occur (fail closed).
+
+### Story 2.5: Broker Adapter Order Acknowledgement + Partial Fills / Rejects / Timeouts State Handling (FR15)
+As a technical operator,
+I want the system to track the full order lifecycle state machine including partial fills, rejects, and timeouts,
+So that the operator always has accurate order/position state and safe reconciliation outcomes.
+
+**Acceptance Criteria:**
+1. **Given** an order is submitted (paper fill or broker-backed)
+   **When** the system records the initial order lifecycle entry
+   **Then** it persists an order intent with a correlation_id and timestamps.
+2. **Given** a broker-backed order acknowledgement is received (or a simulated ack in paper mode)
+   **When** the acknowledgement is processed
+   **Then** the order lifecycle transitions to `ORDER_SENT` and then `ORDER_CONFIRMED` with persisted timestamps.
+3. **Given** a broker-backed order can be partially filled
+   **When** partial fill reports arrive
+   **Then** the system advances lifecycle state through explicit partial-fill transitions and persists filled quantity and remaining quantity.
+4. **Given** the broker returns a reject for an order
+   **When** the reject response is processed
+   **Then** the lifecycle transitions to a rejected/terminated state and the operator is shown a stable reason code (no silent failure).
+5. **Given** broker acknowledgement or fill completion does not arrive within configured timeouts
+   **When** the timeout triggers
+   **Then** the system terminates the order lifecycle safely according to policy and records an operator-visible reason code.
+6. **Given** duplicate broker responses or retried delivery occurs (same correlation_id / idempotency context)
+   **When** the lifecycle updater processes the response again
+   **Then** state updates are idempotent and do not regress or create duplicate fill events.
+7. **Given** the lifecycle transitions to a completion point (position open or terminal close)
+   **When** the system updates positions
+   **Then** the positions view model is consistent with the lifecycle state (no mismatch between order state and displayed position state).
+8. **Given** the traceability chain is enabled
+   **When** lifecycle state changes occur
+   **Then** immutable audit evidence is written linking: decision trace -> order intent -> lifecycle transitions -> fills/rejects/timeouts via correlation_id.
