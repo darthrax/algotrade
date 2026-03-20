@@ -1046,3 +1046,31 @@ So that live scaling never happens until governance and performance evidence are
    **When** stage increase is attempted
    **Then** risk gating still applies (stage increase cannot bypass risk constraints).
 
+### Story 5.1: Tax-Ready Trade Log + Turnover Tracking + CA/ITR Exports (FR30, FR31)
+As a technical operator,
+I want the system to maintain a running turnover figure updated after every trade and export tax-ready trade logs/charge breakdowns in standard CSV/PDF formats,
+So that CA/ITR workflows have complete evidence without manual reconstruction.
+
+**Acceptance Criteria:**
+1. **Given** a trade is executed (paper or broker-backed)
+   **When** the trade lifecycle completes
+   **Then** the system records a tax-ready trade log entry including: date, stock, exchange, buy/sell, quantity, rate, brokerage, STT, exchange charges, GST, stamp duty, and net amount.
+2. **Given** a trade is recorded
+   **When** the tradebook updates
+   **Then** the running turnover figure is updated immediately/consistently with the definition in the brief (sum of settlement amounts).
+3. **Given** turnover is tracked continuously
+   **When** turnover crosses the configured proximity threshold (e.g., 80% of the mandatory audit threshold)
+   **Then** the system raises an operator alert for impending tax audit requirements.
+4. **Given** end-of-day/eod is reached
+   **When** export files are generated
+   **Then** the system exports trade logs and P&L summaries in standard CSV and PDF formats suitable for CA/ITR review.
+5. **Given** exports have a schema version
+   **When** exports are regenerated later (e.g., rerun after a correction)
+   **Then** the system maintains export schema continuity (versioned) and produces consistent fields for the same schema version.
+6. **Given** the system supports paper/live parity
+   **When** paper trades occur
+   **Then** they are included in the exports with correct markers/flags so accounting evidence remains complete.
+7. **Given** an export generation is retried
+   **When** the same run/export id is regenerated again
+   **Then** it is idempotent: no duplicate export artifacts or conflicting totals are produced for that run id.
+
