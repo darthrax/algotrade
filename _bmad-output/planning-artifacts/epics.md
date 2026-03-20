@@ -509,3 +509,31 @@ So that the operator always has accurate order/position state and safe reconcili
 8. **Given** the traceability chain is enabled
    **When** lifecycle state changes occur
    **Then** immutable audit evidence is written linking: decision trace -> order intent -> lifecycle transitions -> fills/rejects/timeouts via correlation_id.
+
+### Story 2.6: Enforce Position/Concentration/Spread/Daily Loss Constraints (FR17)
+As a technical operator,
+I want the system to enforce position count, concentration, spread, and daily loss constraints on each risk evaluation,
+So that capital loss remains bounded within guardrails and the system fails safely when limits are hit.
+
+**Acceptance Criteria:**
+1. **Given** the system is evaluating a recommendation that would create a new position entry (or increase exposure)
+   **When** it enforces position count, concentration, spread, and daily loss constraints
+   **Then** it either permits `ACT` or returns `BLOCK` with stable reason codes for any violated constraint.
+2. **Given** at least one constraint is violated (max positions reached, concentration limit exceeded, spread too wide, or daily loss limit reached)
+   **When** the verdict is computed
+   **Then** the outcome is deterministic `BLOCK` with operator-facing explanation and an explicit next action expectation.
+3. **Given** the daily loss limit is reached
+   **When** subsequent eligible recommendations are evaluated during the same trading day
+   **Then** all new risk is suppressed/blocked according to policy until the next allowed time window.
+4. **Given** constraints depend on current positions/fills state
+   **When** risk evaluation runs concurrently with order lifecycle updates
+   **Then** constraint checks operate on a consistent snapshot so decisions are not based on partial intermediate state.
+5. **Given** the system is in degraded mode (`REST_POLL`)
+   **When** spread/concentration/daily-loss checks run
+   **Then** degraded semantics remain correct and constraint logic does not re-enable entries forbidden by data-mode policy.
+6. **Given** constraint enforcement outcomes are produced
+   **When** traceability is enabled
+   **Then** immutable audit evidence is written with `correlation_id` linking: recommendation -> constraint checks -> verdict reason code.
+7. **Given** the same evaluation is retried (same idempotency key / `correlation_id`)
+   **When** risk evaluation re-runs
+   **Then** the constraint outcome and reason code remain identical (no oscillation for the same inputs/context).
