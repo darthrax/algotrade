@@ -387,3 +387,35 @@ So that the operator can trust act/block outcomes with auditable evidence.
 7. **Given** the operator later requests evidence for “what the model knew”
    **When** the operator inspects the stored feature context for a recommendation
    **Then** it can be retrieved and displayed as the exact feature snapshot used to reach the recommendation outcome.
+
+### Story 2.2: Pre-trade Risk Checks + Stable Act/Block Decision Trace (No Order Submission Yet)
+As a technical operator,
+I want the system to evaluate each non-suppressed recommendation against enumerated risk checks and return a deterministic **ACT vs BLOCK** verdict with stable reason codes and drill-down evidence,
+So that I can trust what the system will do next and what it refused to do (with an auditable causal chain).
+
+**Acceptance Criteria:**
+1. **Given** a recommendation is eligible for risk evaluation (not suppressed by data-mode freshness policy) and has a `correlation_id` / idempotency context
+   **When** the system runs pre-trade risk checks
+   **Then** it returns a verdict: `ACT` or `BLOCK` (before any order is placed).
+2. **Given** one or more enumerated risk checks fail (examples: spread/price constraints, concentration/position count limits, or daily loss constraints)
+   **When** the verdict is computed
+   **Then** the verdict is `BLOCK` and includes a stable machine reason code plus an operator-facing reason label and “next action” expectation.
+3. **Given** all enumerated risk checks pass
+   **When** the verdict is computed
+   **Then** the verdict is `ACT` and the system records an order intent / next execution step marker (without submitting to the broker in this story).
+4. **Given** the same incoming risk evaluation is retried with the same idempotency key / `correlation_id`
+   **When** the system processes the retry
+   **Then** it does not create duplicate risk-decision records or duplicate audit-evidence entries for the same evaluation.
+5. **Given** the risk service is unavailable or errors during pre-trade evaluation
+   **When** the system attempts risk evaluation
+   **Then** it fails closed: returns `BLOCK` with reason code “risk_unavailable”, submits no order, and surfaces an operator-visible alert/notification.
+6. **Given** the UI is showing the current decision for the operator
+   **When** the verdict is `BLOCK` or `ACT`
+   **Then** the operator sees an Act/Block decision card that includes:
+   - the stable reason code
+   - operator-language explanation
+   - explicit next action
+   - a “View full trace” drill-down entry point (trace may be loading/unavailable, but reason + next action remain visible).
+7. **Given** “View full trace” is opened for a decision
+   **When** the trace is rendered
+   **Then** it shows the causal chain in order: freshness/data mode -> feature snapshot -> risk verdict -> (suppression if `BLOCK`, or “order intent created” if `ACT`).
