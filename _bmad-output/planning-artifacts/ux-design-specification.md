@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/product-brief-algotrade-2026-03-20.md
@@ -613,3 +613,84 @@ Phase 3 (Hardening / quality)
 - Edge-case coverage for trace/evidence availability
 - Accessibility pass (keyboard navigation + contrast across Theme 1/2/3)
 - DR evidence pointers wiring and end-to-end consistency checks
+
+## UX Consistency Patterns
+
+### Button Hierarchy and Actions
+**When to Use:**
+Use a consistent hierarchy so the operator can immediately tell what action is safe vs risk-increasing, even under stress.
+
+**Visual Design:**
+- Primary actions use the strongest accent emphasis.
+- Secondary actions use muted emphasis (still high-contrast).
+- Danger/risk actions use the Block severity accent.
+- Disabled actions must remain readable and always include an attached explanation (never silent disable).
+
+**Behavior Rules (Operator Safety):**
+1. Risk-increasing actions are gated behind explicit contract visibility.
+2. Locked/degraded/policy-suppressed states must change what buttons are available and the copy shown (never leave ambiguous “inactive” affordances).
+3. Every interactive action ends with a reliable feedback pattern (success/error/warning/info).
+4. Suppression-by-policy must be labeled as such (policy intent), not treated as “nothing happened.”
+
+**Button Types (Recommended Mapping):**
+- Primary (safe, guided): “Acknowledge”, “Open full trace”, “View reconciliation checklist”, “Confirm kill intent step 1”
+- Secondary (inspect): “View details”, “Expand trace”, “Copy waiver note”, “View audit log”
+- Danger (emergency): Kill switch confirm step 2; any emergency flatten guidance if surfaced
+- Disabled-with-Reason: any approval that is disallowed in locked windows
+
+**Accessibility:**
+- Visible focus styling on every interactive element.
+- Disabled controls must have a tied explanation via `aria-describedby`.
+- Keyboard tab order must mirror the visible hierarchy.
+
+### Feedback Patterns (Success / Error / Warning / Info)
+**When to Use:**
+Use feedback as the operator’s “trust loop.” Feedback must map to contract outcomes and provide operator next steps when action matters.
+
+**Visual Design:**
+- Success: OK accent + icon + short confirmation detail
+- Warning: Warning accent + icon + what is limited + next safe action
+- Error / Block: Block accent + stable reason label + next action
+- Info: muted accent + what changed + where to look next
+
+**Behavior Rules:**
+1. Success means completion and includes one relevant detail (what changed, where recorded, what’s next).
+2. Warning signals degraded/caution conditions and must include what is limited + how the operator should respond.
+3. Error/Block signals risk gate failure or denied operation and must include:
+   - stable reason code (operator-facing)
+   - plain-language interpretation
+   - next action expectation (`wait/retry later/observe only/reconcile/waive with audit note`)
+4. Critical events (kill switch, mode contract transitions, reconciliation blocks) remain visible until acknowledged/resolved per policy.
+5. Never rely on “silence = success.” If nothing is attempted, the UI must explain why via header/decision card/trace.
+
+**Placement Rules:**
+- Contract-wide changes: State/Contract header
+- Act/Block outcomes: decision cards
+- Event narratives: alert stream
+- End-of-day closure: reconciliation status panel
+
+**Accessibility:**
+- Use `aria-live` thoughtfully:
+  - contract changes: `aria-live="polite"`
+  - critical denials/blocks: avoid overuse; when used, prefer `assertive` sparingly
+- Screen readers should announce reason labels before longer explanatory text.
+
+### Navigation Patterns
+**When to Use:**
+Navigation must preserve the operator’s mental model: contract first, evidence second, closure last.
+
+**Visual Design:**
+- Use multi-view navigation (tabs or left nav) with stable selection highlighting.
+- Keep the State/Contract Header visible across all views with the same field order and meaning.
+
+**Behavior Rules:**
+1. Contract header is fixed across navigation so the operator never loses context.
+2. Drill-down views (trace, audit log, reconciliation checklist) use progressive disclosure:
+   - overview stays visible
+   - details open in-place (or as a consistent side panel), not as a context-breaking page
+3. Back/close returns to the same symbol/session/order context.
+4. Navigation must not change semantics—only displayed detail.
+
+**Accessibility:**
+- Tabs/left nav is keyboard navigable (arrow keys where possible, Enter to activate).
+- Every view has an accessible name (e.g., “Decisions”, “Reconciliation”, “Governance”, “Alerts”).
