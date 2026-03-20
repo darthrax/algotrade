@@ -14,7 +14,23 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 ## Technology Stack & Versions
 
-_Documented after discovery phase_
+_Intermediate mode: documented after discovery phase_
+
+### Core Technologies (planned / architecture-specified)
+- FastAPI backend (`TBD` exact version)
+- Postgres with TimescaleDB for tick/time-series persistence (`TBD`)
+- Alembic for DB migrations (`TBD`)
+- APScheduler for scheduled jobs (`TBD`)
+- Dockerized local development (planned `docker-compose.yml`, `Dockerfile.api`, `Dockerfile.worker`) (`TBD`)
+
+### Key Dependencies (integration & operational constraints)
+- ICICI Breeze integration via:
+  - WebSocket for live incremental data (`breeze-connect` official SDK, `TBD` version)
+  - REST for bootstrap, gap-fill, and fallback polling (`breeze-connect` REST methods, `TBD` version)
+- Deployment constraint: static IP mandatory for Breeze API-based trading starting April 2026
+
+### Version/compatibility note for agents
+- Until lockfiles/manifests exist in-repo, treat “exact versions” as `TBD` and rely on the architecture contracts and module boundaries as the compatibility source of truth.
 
 ## Critical Implementation Rules
 
