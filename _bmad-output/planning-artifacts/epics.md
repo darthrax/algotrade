@@ -990,3 +990,31 @@ So that degraded production behavior is rapidly contained with an evidence-backe
    **When** the operator requests evidence later
    **Then** the system can retrieve rollback logs and traceability linking monitoring breach -> rollback -> restored champion version.
 
+### Story 4.7: Operator Approve/Reject Promotion Outside Market Hours (FR26)
+As a technical operator,
+I want the ability to approve or reject a promotion decision outside market hours when human sign-off is required,
+So that model promotion remains governance-controlled and auditable.
+
+**Acceptance Criteria:**
+1. **Given** a challenger model evaluation completed and is ready for human sign-off
+   **When** the system enters the “outside market hours approval window”
+   **Then** the operator is presented with an approval/rejection workflow tied to the candidate model version and gate evidence.
+2. **Given** promotion requires human sign-off by policy
+   **When** the operator chooses **Reject**
+   **Then** the system keeps the current production model as Champion and marks the challenger as not promoted, with recorded decision evidence.
+3. **Given** promotion requires human sign-off by policy
+   **When** the operator chooses **Approve**
+   **Then** the system schedules/enacts promotion only after explicit approval and records the operator decision in immutable audit evidence.
+4. **Given** the operator views decision evidence
+   **When** they open the promotion evidence view
+   **Then** it includes challenger metrics, champion metrics (baseline), performance gates results, and relevant training/evaluation lineage.
+5. **Given** the approval workflow is retried (same operator decision request idempotency)
+   **When** the operator repeats approve/reject with the same context
+   **Then** the system is idempotent: it does not create duplicate approval records or contradictory audit entries.
+6. **Given** the operator is in a locked/invalid governance state
+   **When** they attempt to approve/reject at an incorrect time
+   **Then** the action is blocked and the operator is shown an operator-facing “why locked / when allowed” message.
+7. **Given** the decision is made
+   **When** the next retraining cycle runs
+   **Then** the decision context remains attributable to the candidate that was approved/rejected (no evidence mix-up across candidates).
+
