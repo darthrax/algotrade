@@ -306,3 +306,28 @@ So that exits/stops remain managed but the system never opens new risk on insuff
 6. **Given** `REST_POLL` is active and a prediction would otherwise trigger a BUY/SELL recommendation
    **When** the policy suppresses the entry
    **Then** the suppression is traceable in logs/audit evidence (no silent success), and the operator can see the “what changed / why blocked” reason.
+
+### Story 1.5: Tradable Universe Filters (Liquidity / Price / Event Proximity)
+As a technical operator,
+I want to maintain a tradable universe using configurable liquidity, price, and event-proximity filters,
+So that the system trades only eligible instruments per policy.
+
+**Acceptance Criteria:**
+1. **Given** a configured universe filter set exists (liquidity threshold, min/max price, and event-proximity rules)
+   **When** the universe refresh runs (e.g., daily/weekly cadence per configuration)
+   **Then** the system outputs an updated watchlist of eligible symbols.
+2. **Given** an instrument fails the mandatory exclusion filters
+   **When** the universe refresh evaluates that instrument
+   **Then** it is excluded from the watchlist and is not eligible for signal generation or order placement.
+3. **Given** an instrument passes inclusion criteria
+   **When** the universe refresh runs
+   **Then** the instrument is included in the watchlist, and its data subscription eligibility becomes active.
+4. **Given** the system has an existing watchlist already
+   **When** a symbol transitions from included → excluded after filters change
+   **Then** the system stops applying new signal generation/risk evaluation for that symbol (without breaking existing open positions if any).
+5. **Given** event-proximity inputs (e.g., corporate actions, results calendar) are loaded into the event/blackout calendar
+   **When** an instrument has a pending event within the configured proximity window
+   **Then** it is excluded from the universe according to policy.
+6. **Given** the operator updates universe filter configuration
+   **When** the update occurs outside market hours
+   **Then** the change is applied to the next refresh cycle and the update is audit-logged.
