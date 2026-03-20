@@ -419,3 +419,31 @@ So that I can trust what the system will do next and what it refused to do (with
 7. **Given** “View full trace” is opened for a decision
    **When** the trace is rendered
    **Then** it shows the causal chain in order: freshness/data mode -> feature snapshot -> risk verdict -> (suppression if `BLOCK`, or “order intent created” if `ACT`).
+
+### Story 2.3: Order Submission (Paper Fill vs Broker-Backed) via Risk-Execution State Machine
+As a technical operator,
+I want the system to submit orders only when the pre-trade risk verdict is `ACT`, using the configured fill mode (paper vs broker-backed) while tracking the order lifecycle state machine end-to-end,
+So that executions (or simulated fills) are consistent with paper/live parity and auditable for later reconciliation.
+
+**Acceptance Criteria:**
+1. **Given** the system has an approved `ACT` pre-trade verdict for a recommendation and the policy/data-mode gates allow entries
+   **When** the operator/inference cycle triggers execution
+   **Then** the system creates an order intent and submits an order through the configured execution fill mode.
+2. **Given** the fill mode is `paper/simulated`
+   **When** an order intent is executed
+   **Then** the system performs a simulated fill consistent with the same decision spine and persists order state transitions without contacting the broker.
+3. **Given** the fill mode is `broker-backed/live`
+   **When** an order is submitted
+   **Then** the system uses the broker adapter to place the order and persists broker acknowledgment and correlation IDs linking to the original decision trace.
+4. **Given** an order is submitted
+   **When** broker responses arrive (including partial fills/rejects/timeouts)
+   **Then** the system advances the order lifecycle through explicit states (e.g., `ORDER_SENT -> ORDER_CONFIRMED -> POSITION_OPEN`) and transitions for partial fills/rejects/timeouts per policy.
+5. **Given** the system cannot receive broker acknowledgment within configured timeouts
+   **When** the timeout triggers
+   **Then** the system closes/terminates the order lifecycle safely according to policy and surfaces an operator-visible reason code (no silent success).
+6. **Given** the risk execution service is unavailable at submission time
+   **When** a submission attempt is made
+   **Then** the system fails closed: it does not place a new order and records a risk-unavailable outcome tied to the correlation ID.
+7. **Given** the same submission event is retried (same idempotency key / correlation_id)
+   **When** execution runs again
+   **Then** the system does not create duplicate orders; it reuses/updates the existing persisted lifecycle for that intent.
