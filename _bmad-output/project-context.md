@@ -2,7 +2,7 @@
 project_name: 'algotrade'
 user_name: 'Darthrax'
 date: '2026-03-20T14:51:05+05:30'
-sections_completed: ['technology_stack', 'language_specific', 'framework_specific', 'testing_rules', 'code_quality_style']
+sections_completed: ['technology_stack', 'language_specific', 'framework_specific', 'testing_rules', 'code_quality_style', 'development_workflow_rules']
 existing_patterns_found: 5
 ---
 
@@ -145,4 +145,27 @@ _Intermediate mode: documented after discovery phase_
 - **Security hygiene in code:**
   - Never log raw secrets or full `Authorization` header values.
   - Ensure token handling and privileged action checks are centralized (dependency/module), not scattered.
+
+### Development Workflow Rules (repo/implementation)
+
+- **Decision-spine boundary enforcement (conflict prevention):**
+  - Code changes must preserve that `services/risk_execution/` is the only route to order submission.
+  - When adding new modules, ensure adapters/services do not introduce bypass paths.
+
+- **Commit message discipline (Conventional Commits):**
+  - Use `<type>(<scope>): <subject>` format.
+  - Keep subject concise and in imperative mood (per repo rules).
+
+- **Change grouping discipline:**
+  - Don’t batch unrelated meaningful changes into a single commit.
+  - Treat security/risk-behavior changes as separate, reviewable increments.
+
+- **PR review expectations (behavioral focus):**
+  - Reviews should prioritize:
+    - fail-closed correctness under risk/execution failures
+    - idempotency under duplicate async deliveries
+    - audit/traceability integrity (`correlation_id` chain)
+
+- **Operational parity checks as part of implementation:**
+  - Ensure deterministic replay/backtest uses the same decision pipeline code paths as live/paper up to the final broker submission switch.
 
