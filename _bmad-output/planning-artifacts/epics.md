@@ -678,3 +678,31 @@ So that broker connectivity stays reliable and risk actions remain secure.
 7. **Given** the system transitions between connectivity modes (WS drop -> REST_POLL fallback -> reconnect/backfill)
    **When** broker session auth state changes during those transitions
    **Then** mode semantics remain correct and secrets are not leaked through any code path.
+
+### Story 2.12: Explainability Summaries Tied to Each Recommendation (FR37)
+As a technical operator,
+I want the system to provide explainability summaries tied to individual recommendations (e.g., SHAP top features),
+So that I can sanity-check decisions without bypassing the risk gateway.
+
+**Acceptance Criteria:**
+1. **Given** the system has generated a non-suppressed recommendation for a symbol
+   **When** explainability is requested or auto-rendered in the UI
+   **Then** the UI displays an explainability summary tied to that same `correlation_id` (or recommendation id).
+2. **Given** explainability is computed from model features available at inference time
+   **When** the system renders explainability
+   **Then** the summary corresponds to the stored feature snapshot used to create the recommendation (no mismatch).
+3. **Given** the system is in degraded mode (`REST_POLL`) or policy suppresses entries
+   **When** a recommendation is suppressed or entries are blocked
+   **Then** the UI must not present explainability in a way that implies actability; it either hides it or labels it “not actionable” while still showing the causal policy reason.
+4. **Given** the operator opens a drill-down/trace context
+   **When** they navigate to the explainability portion of the trace
+   **Then** the explainability section is visible within that trace context and matches the same ids.
+5. **Given** explainability is unavailable or still loading
+   **When** the UI requests explainability
+   **Then** the operator still sees stable “what is known” information and a reason if explainability cannot load, without losing the act/block reason and next action.
+6. **Given** explainability is presented for sanity-checking
+   **When** the operator attempts to override the decision
+   **Then** the system enforces the risk gateway (explainability does not grant bypass permissions).
+7. **Given** explainability assets are persisted for audit
+   **When** the operator requests evidence after-the-fact
+   **Then** the system can retrieve the explainability summary corresponding to that original recommendation.
