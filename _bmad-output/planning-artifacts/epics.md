@@ -1074,3 +1074,31 @@ So that CA/ITR workflows have complete evidence without manual reconstruction.
    **When** the same run/export id is regenerated again
    **Then** it is idempotent: no duplicate export artifacts or conflicting totals are produced for that run id.
 
+### Story 5.2: Day-End Broker/Internal Reconciliation Artifacts + Mismatch Governance (FR33)
+As a technical operator,
+I want the system to run end-of-day reconciliation comparing broker contract notes/tradebook with internal execution logs and generate mismatch artifacts,
+So that I can validate broker-vs-internal accuracy and safely control whether next-day live mode is allowed or blocked/waived.
+
+**Acceptance Criteria:**
+1. **Given** end-of-day reconciliation is triggered after market close
+   **When** the reconciliation job runs for the session/day
+   **Then** it produces reconciliation artifacts (report/evidence) that include: positions, fills, fees/charges, timestamps, and net P&L, and a clear pass/fail status.
+2. **Given** broker and internal records exist for the same session/day
+   **When** the system compares them
+   **Then** it identifies mismatches across positions/fills/fees/timestamps/net P&L and records the deltas (missing vs extra fills, quantity/price deltas, charge deltas, timestamp skew).
+3. **Given** reconciliation detects unresolved mismatches beyond configured tolerances
+   **When** next-day live mode readiness is evaluated
+   **Then** the system blocks live activation until mismatches are cleared or explicitly waived with an audit note.
+4. **Given** reconciliation detects mismatches (even if within tolerance)
+   **When** reconciliation completes
+   **Then** the system sends an operator alert (Telegram/dashboard) summarizing mismatch highlights and whether next-day live is blocked.
+5. **Given** an operator clears mismatches after review
+   **When** clearing is recorded
+   **Then** the reconciliation state updates so next-day live activation can proceed (and the evidence of the clearing is retained).
+6. **Given** reconciliation is rerun for the same session/day (idempotency context)
+   **When** the job completes again
+   **Then** it is idempotent: no duplicate artifacts are created; existing artifacts are reused or deterministically versioned with consistent fields.
+7. **Given** reconciliation artifacts are exported/stored for compliance
+   **When** outputs are generated
+   **Then** exports include a versioned schema and are linked to immutable audit evidence so the artifacts are tamper-evident.
+
