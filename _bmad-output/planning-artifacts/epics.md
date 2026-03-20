@@ -706,3 +706,31 @@ So that I can sanity-check decisions without bypassing the risk gateway.
 7. **Given** explainability assets are persisted for audit
    **When** the operator requests evidence after-the-fact
    **Then** the system can retrieve the explainability summary corresponding to that original recommendation.
+
+### Story 2.13: Manual Override Reason Capture (FR38) — Auditable Operator Intent
+As a technical operator,
+I want the system to require a reason when I perform a manual override or exceptional action,
+So that the override is auditable and traceable with operator intent in the evidence chain.
+
+**Acceptance Criteria:**
+1. **Given** the operator selects a manual override action in the console
+   **When** the action is submitted
+   **Then** the UI requires a non-empty reason input before the action can proceed.
+2. **Given** an operator attempts to submit without providing a reason
+   **When** they click confirm
+   **Then** the system blocks the action and shows a user-facing validation error with a stable reason label.
+3. **Given** a reason is provided
+   **When** the manual override is executed (exceptional action path)
+   **Then** the system persists the operator-provided reason text/metadata into the immutable audit trail linked to the same `correlation_id`.
+4. **Given** the override affects a decision (act/block/order behavior)
+   **When** the decision trace is later viewed
+   **Then** the trace includes the operator-provided reason, tied to the same ids/correlation_id.
+5. **Given** the operator retries the same override request (same idempotency key)
+   **When** the retry is processed
+   **Then** the system does not create duplicate override audit entries; it preserves the reason associated with that idempotency key.
+6. **Given** the system is in degraded mode or locked policy state
+   **When** the operator attempts a manual override
+   **Then** the system still enforces reason capture and does not allow override to bypass risk gateway/contract semantics.
+7. **Given** the UI is open and the operator is acting under stress
+   **When** the reason flow is displayed
+   **Then** it provides a clear operator “next action” expectation and does not allow silent state changes.
