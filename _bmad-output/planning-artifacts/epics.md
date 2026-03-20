@@ -447,3 +447,34 @@ So that executions (or simulated fills) are consistent with paper/live parity an
 7. **Given** the same submission event is retried (same idempotency key / correlation_id)
    **When** execution runs again
    **Then** the system does not create duplicate orders; it reuses/updates the existing persisted lifecycle for that intent.
+
+### Story 2.4: Emergency Stop (Kill Switch) with Two-Step Confirm, Fail-Closed Behavior, and Operator Lock State (FR16 + UX)
+As a technical operator,
+I want an emergency kill switch that requires a deliberate two-step confirmation to activate,
+So that the system closes positions and halts all new risk immediately and remains locked until cleared, with clear operator messaging.
+
+**Acceptance Criteria:**
+1. **Given** the operator initiates the kill switch action in the operator console
+   **When** they press the kill switch control
+   **Then** the UI starts the two-step confirmation flow (step 1 description + step 2 explicit confirm requirement).
+2. **Given** the operator is on kill switch step 1
+   **When** they confirm in step 2 by typing `CONFIRM` (or equivalent explicit confirmation) / checking the confirm box
+   **Then** the kill switch activation request is accepted and proceeds to activation.
+3. **Given** the kill switch two-step dialog is open
+   **When** the operator attempts to cancel/escape
+   **Then** ESC/cancel only dismisses safely per the two-step rules (does not activate on accidental dismiss).
+4. **Given** kill switch is activated
+   **When** the system processes the activation
+   **Then** it closes/terminates open positions and halts new risk immediately (no new order placement).
+5. **Given** kill switch is active
+   **When** the inference/risk pipeline attempts to process a new recommendation
+   **Then** it returns a fail-closed blocked outcome (no new orders) with an operator-visible reason code and “next action” expectation.
+6. **Given** kill switch is activated
+   **When** audit/traceability is enabled
+   **Then** the system writes immutable audit evidence linked to a `correlation_id` (showing who/what initiated the kill switch and the resulting state change).
+7. **Given** the kill switch is active
+   **When** the operator views current state
+   **Then** the UI reflects a `Locked` contract state and provides required recovery steps for when/ how normal trading can resume.
+8. **Given** the operator console requires strong auth for risk-increasing actions
+   **When** kill switch activation is requested
+   **Then** unauthenticated/invalid requests are rejected and no position-closing/risk-halt actions occur (fail closed).
