@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2, 3, 4]
+stepsCompleted: [1, 2, 3, 4, 5]
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/product-brief-algotrade-2026-03-20.md
@@ -124,3 +124,56 @@ The UI should make these actions nearly automatic:
 - **Guided next actions**: every failure mode ends with “here’s what to do next,” not just an explanation.
 - **Evidence-backed reassurance**: explanations should map to logs/reconciliation so trust is earned.
 - **Constrained affordances for dangerous actions**: deliberate friction only where risk increases.
+
+## UX Pattern Analysis & Inspiration
+
+### Inspiring Products Analysis
+
+**Grafana**
+- Panel-based dashboard consistency helps operators stay oriented without hunting.
+- Threshold accents communicate “what matters now” instantly.
+- Alerting visuals stay consistent with dashboard semantics, reducing ambiguity during stress.
+- Drill-down preserves mental map (you can go from “something is wrong” to “why”).
+
+**Datadog**
+- Event-driven incident UX: severity + narrative + actionable next steps.
+- Timelines/correlation reduce “confused investigation” moments.
+- Alerts are built to answer “what changed?” and often point to a path forward (ack/runbook/triage).
+
+**TradingView**
+- Chart annotations turn time-series into explainable moments.
+- Strong progressive disclosure: scan quickly, then inspect details in-place.
+
+### Transferable UX Patterns
+
+**Navigation / hierarchy**
+- A contract-first “state header” (Normal vs Degraded `REST_POLL` vs Locked) that remains in a fixed location and color language.
+- Airy, grid-stable layout: essential decision context stays in the same positions across screens to reduce cognitive load.
+
+**Interaction**
+- Act/Block decision cards styled like alert severities: consistent accents and always ending in a next action.
+- Decision trace view (drill-down) that shows the causal chain: data freshness/data mode -> feature/signal snapshot -> risk verdict -> broker/order outcome (or explicit suppression).
+
+**Visual language (dark + accents + airy)**
+- Use accent colors consistently for mode, freshness health, risk verdict, and reconciliation status (with legend/labels, not color-only meaning).
+- Use empty states intentionally (“suppressed by policy”) instead of silent failure.
+
+### Anti-Patterns to Avoid
+- “Green/red only” semantics that don’t explain contract boundaries (especially for `REST_POLL` and locked governance windows).
+- Alerts that disappear or lack a stable operator-facing reason code.
+- Dense dashboards that force scrolling during time-critical moments.
+- Suppression-by-policy hidden behind technical logs instead of explicitly communicated in the UI.
+
+### Design Inspiration Strategy
+
+**What to Adopt**
+- Grafana-like threshold accents and stable panel semantics for monitoring/trust states.
+- Datadog-like incident/event framing for reconciliation failures and degraded-mode transitions.
+- TradingView-like annotation/timeline thinking for decision traces and “what happened when”.
+
+**What to Adapt**
+- Convert monitoring severity into trading-specific “risk verdict severity + reason codes”.
+- Convert incident timelines into decision traces with explicit next actions (“ack/wait/reconcile/kill switch”).
+
+**What to Avoid**
+- Avoid ambiguity in suppressed states: “silence” must never be interpretable as success.
