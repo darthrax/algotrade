@@ -256,3 +256,28 @@ So that the feature engineering pipeline always runs on a complete, gap-free tim
 6. **Given** startup gap fill cannot complete for one or more symbols
    **When** the system evaluates readiness
    **Then** normal signal generation for that symbol is blocked and the operator receives an explicit readiness reason (no silent failure).
+
+### Story 1.3: Missing Data Detection + Operator Notification
+As a technical operator,
+I want the system to detect missing market data beyond a configured threshold during market hours and notify me,
+So that the feature window is flagged as unreliable and entries are handled safely.
+
+**Acceptance Criteria:**
+1. **Given** the system is running during market hours and ingesting ticks/quotes for subscribed instruments
+   **When** it detects a gap in stored tick continuity exceeds the configured missing-data threshold
+   **Then** it flags the affected symbol’s feature window as unreliable.
+2. **Given** the configured missing-data threshold is exceeded
+   **When** a gap is detected
+   **Then** the system triggers an operator notification (Telegram and/or dashboard alert).
+3. **Given** missing-data state is active for an instrument
+   **When** a prediction/recommendation attempt is made for that instrument
+   **Then** the recommendation is suppressed (or downgraded according to policy) and the operator receives a reason code tied to missingness.
+4. **Given** the missing-data gap is resolved via backfill/continued ingestion
+   **When** freshness/continuity is restored beyond the configured thresholds
+   **Then** the unreliable flag is cleared for subsequent feature generation.
+5. **Given** a restart occurs during market hours
+   **When** startup recovery runs (including gap fill)
+   **Then** missing-data detection still functions after gap fill completion, and unresolved gaps do not trigger duplicate notifications silently.
+6. **Given** the system’s data mode is degraded (`REST_POLL`)
+   **When** missingness detection logic runs
+   **Then** it follows the intended degraded-mode semantics: monitoring/alerting stays accurate while new entries remain suppressed by policy.
