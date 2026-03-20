@@ -1,0 +1,148 @@
+---
+stepsCompleted: [step-01-validate-prerequisites-extract-requirements]
+inputDocuments:
+  - _bmad-output/planning-artifacts/prd.md
+  - _bmad-output/planning-artifacts/architecture.md
+  - _bmad-output/planning-artifacts/ux-design-specification.md
+  - _bmad-output/planning-artifacts/ux-design-directions.html
+---
+
+# algotrade - Epic Breakdown
+
+## Overview
+
+This document provides the complete epic and story breakdown for algotrade, decomposing the requirements from the PRD, UX Design if it exists, and Architecture requirements into implementable stories.
+
+## Requirements Inventory
+
+### Functional Requirements
+
+FR1: The system can ingest streaming market data for subscribed instruments during the trading session.
+FR2: The system can retrieve and persist historical price series to backfill gaps and onboard new symbols.
+FR3: The system can reject or reconcile duplicate and out-of-sequence ticks per defined rules.
+FR4: The system can detect missing data beyond a defined threshold during market hours and notify the operator.
+FR5: The system can operate in a degraded quote mode when streaming is unavailable and expose the active mode per instrument.
+FR6: The operator can maintain a tradable universe using configurable liquidity, price, and event-proximity filters.
+FR7: The system can block new entries for instruments or sessions where policy forbids trading.
+FR8: The system can compute features from available market data without using disallowed future information.
+FR9: The system can emit trade recommendations with direction, confidence, and regime context.
+FR10: The system can suppress recommendations when required inputs are stale or the active data mode forbids new risk.
+FR11: The system can persist the feature context used for each recommendation for later audit.
+FR12: The operator can run the product in a simulated-fill mode or a broker-backed mode with shared decision logic.
+FR13: The system can evaluate each recommendation against enumerated risk checks before placing orders.
+FR14: The system can place, amend, and close orders with protective exit parameters according to policy.
+FR15: The system can advance and terminate order lifecycle states including partial fills, rejects, and timeouts.
+FR16: The operator can invoke an emergency stop that closes positions and halts new risk until cleared.
+FR17: The system can enforce position count, concentration, spread, and daily loss constraints.
+FR18: The system can simulate prior sessions through the same decision pipeline used during live operation.
+FR19: The operator can compare strategy performance across time splits and benchmarks under a shared cost model.
+FR20: The system can derive training labels from stored recommendations and subsequent price outcomes.
+FR21: The system can run scheduled training jobs that produce candidate models without manual ad hoc steps.
+FR22: The system can store and retrieve versioned model artifacts with training data span and configuration lineage.
+FR23: The system can compare candidate models to the production champion using agreed performance gates.
+FR24: The system can withhold promotion when gates fail and retain the prior champion.
+FR25: The system can revert to a prior champion when live monitoring breaches rollback policy.
+FR26: The operator can approve or reject a promotion decision outside market hours when human sign-off is required.
+FR27: The operator can inspect positions, balances, and lifecycle state through a local console.
+FR28: The system can deliver notifications for connectivity, risk, training, and health events through a configured channel.
+FR29: The system can report readiness and liveness for independent watchdog processes.
+FR30: The system can export trades, charges, and summaries for accounting and tax workflows.
+FR31: The system can track cumulative turnover and surface proximity to statutory audit thresholds.
+FR32: The system can record immutable audit trails for recommendations, orders, fills, configuration changes, and model promotions.
+FR33: The system can produce day-end reconciliation artifacts aligning broker activity with internal records.
+FR34: The operator can change risk, universe, and model parameters outside market hours with each change audited.
+FR35: The system can apply blackout and session-window rules that restrict or throttle new risk.
+FR36: The system can manage broker session authentication lifecycle without exposing secrets through operator-facing APIs.
+FR37: The operator can view explainability summaries tied to individual recommendations.
+FR38: The system can record a reason when performing a manual override or exceptional action.
+FR39: The system can enforce stepped live-capital increases only after defined gates and explicit operator confirmation.
+
+### NonFunctional Requirements
+
+NFR1: For active watchlist symbols during RTH, ingest-to-durable-store latency meets p95/p99 targets in the operational SLO set.
+NFR2: The feature-complete -> risk decision path meets SLO under normal streaming conditions; under degraded quote mode, behavior matches Functional Requirements (no new-entry path when forbidden).
+NFR3: Submit -> broker acknowledgment meets SLO when broker health is normal; sustained breach triggers escalation/safe-close runbook.
+NFR4: Operator console primary views (positions, health, mode, last signal time) load within 2 seconds on typical local hardware under normal load (smoke-testable).
+NFR5: Scheduled train+evaluate completes inside the defined overnight window on the reference profile, or surfaces failure to the operator within 15 minutes of the scheduled end.
+NFR6: After an unplanned restart during RTH, gap fill for the watchlist completes before new automated entries are accepted, or the system remains in blocked-entry with explicit reason.
+NFR7: Broker credentials, session material, and notification tokens are encrypted at rest and never logged in plaintext.
+NFR8: Operator-facing execution or mode APIs on non-loopback binds are authenticated; kill, mode change, and capital stage actions require stronger trust than read-only health.
+NFR9: Audit and config-change trails follow tamper-evident discipline; backups use encrypted handling.
+NFR10: Remote access beyond localhost uses TLS (or equivalent recommended default).
+NFR11: The client obeys documented broker rate/burst/subscription constraints; sustained limit signals trigger backoff and degraded mode (not blind retry storms).
+NFR12: Broker vs internal reconciliation meets accuracy targets (no unexplained material differences) before live is armed for the next session, unless waived with an audit reason.
+NFR13: System clock stays within NTP tolerance required by pre-trade checks; drift breach blocks trading until cleared.
+
+### Additional Requirements
+
+- AR1: Starter approach is “from scratch (with ML baked in immediately)”, not a generic scaffold, to avoid architectural drift from the ML->feature->signal->risk/execution control spine.
+- AR2: Initialize internal “decision spine” module boundaries so ML cannot bypass `services/risk_execution/`.
+- AR3: Build persistence + schema evolution (migrations) aligned with auditability requirements.
+- AR4: Include deterministic replay/backtest hooks as a parallel path to live/paper behavior from day one.
+- AR5: Wire scheduled training orchestration plus model governance/promotion gates into the system lifecycle early (not as a later bolt-on).
+- AR6: Use TimescaleDB on Postgres as the authoritative tick/time-series store; support retention/downsampling/compression so tick volume doesn’t degrade operational viability.
+- AR7: Use privileged shared secret token(s) for risk-increasing internal API routes (notably `POST /kill` and `POST /mode`) provided via an `Authorization` header.
+- AR8: Separate tokens for operator vs automation to enable scoping and auditing by actor.
+- AR9: Ensure privileged tokens are not logged in plaintext and that all privileged actions create auditable entries tied into the correlation/log chain.
+- AR10: Treat control-plane as synchronous and propagation as asynchronous: sync critical path triggers deterministic risk/execution; async consumers persist durable events for safe recovery and must not place orders.
+- AR11: Require durable-source-of-truth for async consumers: consumers must derive work from durable records (DB/outbox-like durable events) to recover/replay correctly after restarts.
+- AR12: Require idempotency + correlation_id for every async handler (duplicate deliveries must not re-trigger capital actions).
+- AR13: Enforce fail-closed behavior: risk/execution errors produce “no new risk actions”; order submission is disabled if the risk service is unhealthy.
+- AR14: Enforce stable error/risk rejection machine codes and “no silent success”: suppressed/block-by-policy outcomes must emit traceable events and operator-facing reason codes.
+- AR15: Enforce architectural communication conventions: ISO-8601 UTC timestamps; `snake_case` event names/identifiers; consistent API response wrapper `{ ok, data }` vs `{ ok, error: { code, message, correlation_id } }`.
+- AR16: Treat static IP and session token lifecycle as operational dependencies for Breeze connectivity (static IP mandatory starting April 2026).
+- AR17: Enforce time/session correctness keyed to India market session windows, including blackout/lockout policy for configuration and/or new entries.
+- AR18: Represent and enforce data-mode semantics across the stack (`WEBSOCKET` vs `REST_HISTORICAL` vs `REST_BACKFILL` vs `REST_POLL`), including `REST_POLL` entry suppression-by-policy behavior.
+- AR19: Deterministic replay requirement: simulation clock/replay tools must run through the same decision path used during live trading to avoid paper/live divergence.
+
+### UX Design Requirements
+
+UX-DR1: Implement a tokens-first dark Streamlit operator console design system with semantic tokens: `--bg`, `--panel`, `--text`, `--muted`, `--accent`, and semantic accents `--status-ok`, `--status-warn`, `--status-block`.
+UX-DR2: Provide exactly three selectable visual themes (Theme 1 “Nebula Teal”, Theme 2 “Graphite Lime”, Theme 3 “Charcoal Violet”) with explicit color assignments for OK/Warning/Block accents and state accents (Normal, Degraded `REST_POLL`, Locked).
+UX-DR3: Theme switching is visual-only: it must not change semantics, labels, reason codes, or permission/risk logic.
+UX-DR4: Enforce non-color cues across UI: every “Block / Degraded / Locked” must include label + icon + operator-facing reason code (no color-only meaning).
+UX-DR5: Ensure contrast and readability for every theme (target WCAG Level AA; explicitly validate contrast of state/reason text).
+UX-DR6: Make keyboard focus states clearly visible on all interactive elements, and ensure tab order matches visible hierarchy and “next action” flow.
+UX-DR7: Implement a fixed, always-visible “State/Contract Header” at a stable screen location across views.
+UX-DR8: The State/Contract Header must display contract/mode (Normal (RTH), Degraded `REST_POLL`, Locked), an explicit “Entries allowed” yes/no per policy, and next window guidance (what changes next).
+UX-DR9: State/Contract Header must show must-not-miss alerts (top 1–3) and provide a focusable “Why?” affordance for contract/mode changes.
+UX-DR10: The State/Contract Header must use `aria-live="polite"` for contract/mode changes and handle Unknown/Error by showing safe fallback messaging derived from last-known safe contract.
+UX-DR11: Implement an “Act/Block Decision Card” that always renders the act/block outcome plus a stable reason code, operator-language explanation, and an explicit next action (wait/observe/reconcile/kill-switch confirmation).
+UX-DR12: Decision Cards must include a drill-down entry point (“View full trace”) and must never rely on “silence = success.”
+UX-DR13: Decision Cards must support trace-loading states (“Loading trace”, “Trace unavailable”) without losing the act/block reason and next action.
+UX-DR14: Implement a “Decision Trace / Drill-down” with progressive disclosure showing the causal chain: freshness/data mode -> feature/signal snapshot -> risk checks -> broker outcome or explicit suppression, plus evidence blocks for missing/unknown parts.
+UX-DR15: Decision Trace must be implemented with accessible accordion semantics (keyboard navigable, `aria-expanded` / role semantics) and show “what is unknown” when evidence is incomplete.
+UX-DR16: Implement a “Reconciliation Status Panel” that supports statuses: Pass, Fail, Needs waiver, and Block next-day live; it must include broker vs internal alignment highlights and a clear next action (resolve mismatch vs waive with audit note).
+UX-DR17: Reconciliation Status Panel must surface pending/running states and emit an `aria-live` summary for operator reassurance.
+UX-DR18: Implement a “Governance Lockout / Approval Card” that (1) shows why locked + next allowed time, and (2) provides an outside-lock review card with requested change + version lineage + candidate metrics summary.
+UX-DR19: Governance Lockout / Approval Card must disable risk-increasing controls during lock windows and include an attached explanation via `aria-describedby` (never silent disable).
+UX-DR20: Approval/denial must require an audit note entry and be captured in UI via a modal/dialog flow with confirmation/audit context.
+UX-DR21: Implement waiver flow integration in the UI as part of reconciliation/governance, including capture of waiver intent and audit note entry.
+UX-DR22: Implement a “Kill Switch Two-Step Confirm” that uses a deliberate two-step flow (step 1: high-level impact; step 2: explicit confirm via typing `CONFIRM` or checkbox).
+UX-DR23: Kill Switch Two-Step Confirm must include accessibility: dialog role, focus trap, and safe ESC/cancel behavior (ESC cancels only when appropriate, per step).
+UX-DR24: After kill-switch activation, the UI must reflect a Locked contract state and surface required recovery steps.
+UX-DR25: Implement an “Alert Stream” as an event feed with severity accents + stable event labels, “what changed” summaries, and next actions (ack/wait/open trace).
+UX-DR26: Alert Stream must group alerts into a single accessible region, provide focusable action buttons, and require explicit acknowledgment for critical alerts (with evidence persistence).
+UX-DR27: Implement a consistent “button hierarchy” pattern: primary/safe guided actions, secondary/inspect actions, and danger actions; disabled controls must remain readable and always include a tied explanation.
+UX-DR28: Implement a consistent “Feedback pattern” across the UI: Success includes completion detail; Warning includes what is limited + next safe action; Error/Block includes stable reason code + plain-language interpretation + next action expectation.
+UX-DR29: Implement navigation patterns that preserve the operator mental model: contract header always visible; drill-down views use progressive disclosure (overview remains visible while details expand in-place or in a stable side panel).
+UX-DR30: Tabs/left-nav must be keyboard navigable with accessible names for each view (e.g., “Decisions”, “Reconciliation”, “Governance”, “Alerts”).
+UX-DR31: Responsive strategy must be implemented for Desktop (1024px+), Tablet (768–1023px), and Mobile (320–767px) with explicit rules: on mobile the State/Contract Header becomes sticky and the latest decision/next action is in the first viewport.
+UX-DR32: Breakpoints are fixed at Mobile 320–767px, Tablet 768–1023px, Desktop 1024px+; no custom breakpoints unless Streamlit constraints require it.
+UX-DR33: Responsive testing must be done at representative widths (~375px, ~768px, ~1024px) ensuring the State/Contract Header remains visible and the next-action affordance remains accessible on mobile.
+UX-DR34: Accessibility testing must include automated `axe`/Lighthouse checks for each theme and keyboard-only walkthroughs for critical flows: Decisions->trace drill-down, Reconciliation checklist+waiver capture, Governance approval/denial, and Kill switch two-step confirm.
+UX-DR35: Screen reader checks must validate the contract header and reason-code reading order for each theme.
+UX-DR36: Implement reconciliation checklist-style UI so EOD reconciliation is pass/fail/waiver resolved as a routine checklist rather than investigation.
+UX-DR37: Implement SHAP/top-features surfacing as explainability tied to individual recommendations for operator sanity-checking (must not bypass the risk gateway).
+UX-DR38: Ensure governance lockout window messaging is operator-facing and aligned to the UX direction’s market-hours lock semantics (controls disabled during the locked window; “why locked” and “when allowed” must be explicit).
+UX-DR39: Implement layout Direction 2 as a two-panel structure: Panel A fixed State/Contract region; Panel B decision trace card plus reconciliation status block for scan-friendly closure.
+UX-DR40: Implement UI defaults that keep contract honesty: mode/state labels must reflect true semantics (including suppression-by-policy), never approximate it or hide it in logs.
+
+## FR Coverage Map
+
+{{requirements_coverage_map}}
+
+## Epic List
+
+{{epics_list}}
+
