@@ -961,3 +961,32 @@ So that the production model is never replaced by a worse candidate.
 7. **Given** the system supports rollback policies
    **When** a failed promotion attempt occurs
    **Then** no rollback is required because production was never switched; evidence still links the decision outcome to the retained champion.
+
+### Story 4.6: Revert to Prior Champion When Live Monitoring Breaches Rollback Policy (FR25)
+As a technical operator,
+I want the system to revert to a prior champion when live monitoring breaches rollback policy,
+So that degraded production behavior is rapidly contained with an evidence-backed rollback.
+
+**Acceptance Criteria:**
+1. **Given** the system is running with a current production model designated as the Champion
+   **When** live monitoring detects a severe degradation event that meets rollback policy thresholds
+   **Then** the system triggers rollback to the last stable Champion according to the rollback SLA.
+2. **Given** rollback policy is triggered
+   **When** the rollback procedure runs
+   **Then** the system marks the candidate as failed (no further activation) and restores the champion model as the active production model.
+3. **Given** rollback is executed
+   **When** the operator views the rollback decision evidence
+   **Then** the evidence includes: the breached alert condition, the monitoring window, the metrics that triggered rollback, and the target champion version.
+4. **Given** rollback is executed
+   **When** the system returns to operating with the restored champion
+   **Then** it resumes governed trading behavior consistent with the champion’s configuration and does not leave the system in an inconsistent “half deployed” state.
+5. **Given** rollback is triggered while other automated jobs are running (e.g., scheduled retraining)
+   **When** those jobs update their state
+   **Then** the rollback does not corrupt model registry pointers and the next promotion candidate remains separate from the restored champion.
+6. **Given** rollback is triggered again due to repeated alerts
+   **When** the rollback process is retried
+   **Then** the rollback is idempotent: it does not create contradictory active-model states and reuses consistent evidence for the same incident context.
+7. **Given** rollback was executed
+   **When** the operator requests evidence later
+   **Then** the system can retrieve rollback logs and traceability linking monitoring breach -> rollback -> restored champion version.
+
