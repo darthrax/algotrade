@@ -196,7 +196,7 @@ Epic goal: Simulate prior sessions through the same decision pipeline and compar
 Epic goal: Run scheduled training, manage versioned artifacts, compare challenger vs champion with gates, support promotion/rollback approval outside market hours, and stage live capital increases only after explicit confirmation.
 **FRs covered:** FR20, FR21, FR22, FR23, FR24, FR25, FR26, FR34, FR39
 
-### Epic 5: Reconciliation, Immutable Audit, and Tax-Ready Exports
+### Epic 5: Reconciliation, Day-End Packaging, and Tax-Ready Exports
 Epic goal: Produce day-end reconciliation artifacts and export trade/charge/tax-ready records with turnover tracking.
 **FRs covered:** FR30, FR31, FR33
 
