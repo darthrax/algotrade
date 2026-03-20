@@ -933,3 +933,31 @@ So that promotion decisions are evidence-based and reproducible.
 7. **Given** the anti-overfitting mandate is enabled
    **When** metrics are computed
    **Then** the system flags if the permanent validation set was improperly used for training/hyperparameter tuning and indicates the mandate violation in evidence.
+
+### Story 4.5: Withhold Promotion When Gates Fail (FR24)
+As a technical operator,
+I want the system to withhold promotion and retain the current champion when performance gates fail,
+So that the production model is never replaced by a worse candidate.
+
+**Acceptance Criteria:**
+1. **Given** a challenger model evaluation has completed and performance gates are defined
+   **When** one or more gates fail
+   **Then** the challenger is marked “Not Eligible for Promotion” and the champion remains active.
+2. **Given** gate failure prevents promotion
+   **When** the promotion workflow is executed
+   **Then** the system does not deploy the challenger into production/live mode (no silent deployment).
+3. **Given** the promotion is withheld due to gate failure
+   **When** the operator reviews the promotion decision evidence
+   **Then** the decision includes which gates failed and the computed metrics used.
+4. **Given** the champion is retained after gate failure
+   **When** the next retraining cycle runs
+   **Then** the champion remains unchanged unless a new challenger passes the gates.
+5. **Given** a promotion-withhold decision is retried (same challenger + champion + gate configuration)
+   **When** the workflow re-runs
+   **Then** it is idempotent: it does not create contradictory or duplicated promotion records and it reuses consistent evidence.
+6. **Given** gate failure is detected during governance windows
+   **When** any required human approval steps are handled according to policy
+   **Then** the final promotion state remains “withheld” unless gates are satisfied and evidence matches.
+7. **Given** the system supports rollback policies
+   **When** a failed promotion attempt occurs
+   **Then** no rollback is required because production was never switched; evidence still links the decision outcome to the retained champion.
