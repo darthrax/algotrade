@@ -356,3 +356,34 @@ So that the system never opens new risk during blackout windows, observation-onl
 6. **Given** the system is in degraded mode (`REST_POLL`)
    **When** policy restrictions apply at the same time as degraded semantics
    **Then** degraded semantics remain correct (entries suppressed due to granularity), and policy suppression does not incorrectly “re-open” entries due to mode transition timing.
+
+## Epic 2: Risk-Gated Trading Decisions & Operator Trust Loop
+Epic goal: Convert feature/signal proposals into fail-closed act/block decisions, place/track orders (paper/live parity), enforce risk constraints, and keep the operator informed with stable reason codes and next actions.
+
+### Story 2.1: Feature Snapshot + Recommendation Suppression (Data Mode + Freshness Gate) with Immutable Audit Trace
+As a technical operator,
+I want the system to compute features from available market data, persist the feature context, and emit (or suppress) trade recommendations based on data-mode/freshness rules,
+So that the operator can trust act/block outcomes with auditable evidence.
+
+**Acceptance Criteria:**
+1. **Given** an instrument has a configured feature window and the active data mode is `WEBSOCKET` (or a mode where new risk is allowed)
+   **When** the system computes features for a prediction cycle
+   **Then** it computes features using only available market data (no disallowed future information) and persists the feature context used.
+2. **Given** a feature freshness check is configured
+   **When** any mandatory feature in the required set is more than the configured staleness limit
+   **Then** the system suppresses the recommendation for that instrument.
+3. **Given** the active data mode is `REST_POLL` (degraded semantics) or otherwise forbids new risk
+   **When** a recommendation would be generated
+   **Then** the system suppresses recommendations according to policy (entries/risk are not opened under forbidden mode).
+4. **Given** a recommendation is not suppressed
+   **When** the system emits the recommendation
+   **Then** the recommendation includes direction, confidence, and regime context, and the persisted feature context is linked to that recommendation for later audit.
+5. **Given** a “traceability chain” requirement is enabled
+   **When** a recommendation is emitted or suppressed
+   **Then** the system writes immutable audit evidence with a `correlation_id` that can link: feature context -> recommendation outcome -> downstream risk decision trace.
+6. **Given** the same triggering event is retried (idempotent delivery scenario)
+   **When** the system processes it again
+   **Then** it does not create duplicate audit/recommendation records for the same `correlation_id` / idempotency key.
+7. **Given** the operator later requests evidence for “what the model knew”
+   **When** the operator inspects the stored feature context for a recommendation
+   **Then** it can be retrieved and displayed as the exact feature snapshot used to reach the recommendation outcome.
