@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [step-01-validate-prerequisites-extract-requirements]
+stepsCompleted: [step-01-validate-prerequisites-extract-requirements, step-02-design-epics]
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/architecture.md
@@ -139,10 +139,64 @@ UX-DR39: Implement layout Direction 2 as a two-panel structure: Panel A fixed St
 UX-DR40: Implement UI defaults that keep contract honesty: mode/state labels must reflect true semantics (including suppression-by-policy), never approximate it or hide it in logs.
 
 ## FR Coverage Map
-
-{{requirements_coverage_map}}
+FR1: Epic 1 - ingest streaming market data
+FR2: Epic 1 - retrieve/persist historical backfill data
+FR3: Epic 1 - reject/reconcile duplicate and out-of-sequence ticks
+FR4: Epic 1 - detect missing data + notify operator
+FR5: Epic 1 - degraded quote mode + expose active mode per instrument
+FR6: Epic 1 - maintain tradable universe via liquidity/price/event-proximity filters
+FR7: Epic 1 - block new entries when policy forbids trading
+FR8: Epic 2 - compute features from available data only
+FR9: Epic 2 - emit trade recommendations w/ confidence + regime context
+FR10: Epic 2 - suppress recommendations when inputs stale or mode forbids new risk
+FR11: Epic 2 - persist feature context for audit
+FR12: Epic 2 - simulate vs broker-backed fill modes using shared decision logic
+FR13: Epic 2 - evaluate recommendations against enumerated risk checks
+FR14: Epic 2 - place/amend/close orders with protective exits
+FR15: Epic 2 - manage order lifecycle states (partial fills/rejects/timeouts)
+FR16: Epic 2 - emergency stop closes positions + halts new risk
+FR17: Epic 2 - enforce position count/concentration/spread/daily loss constraints
+FR18: Epic 3 - simulate prior sessions via the same decision pipeline
+FR19: Epic 3 - compare performance across time splits/benchmarks under shared cost model
+FR20: Epic 4 - derive training labels from stored recommendations + outcomes
+FR21: Epic 4 - run scheduled training jobs without ad hoc steps
+FR22: Epic 4 - store/retrieve versioned model artifacts + training span/config lineage
+FR23: Epic 4 - compare candidates to champion using agreed performance gates
+FR24: Epic 4 - withhold promotion and retain champion when gates fail
+FR25: Epic 4 - revert to prior champion when rollback policy is breached
+FR26: Epic 4 - operator approve/reject promotion outside market hours when required
+FR27: Epic 2 - operator inspects positions/balances/lifecycle state in console
+FR28: Epic 2 - notifications for connectivity/risk/training/health events
+FR29: Epic 2 - readiness/liveness endpoints for watchdog processes
+FR30: Epic 5 - export trades/charges/summaries for accounting/tax
+FR31: Epic 5 - track cumulative turnover + proximity to audit thresholds
+FR32: Epic 5 - record immutable audit trails for recommendations/orders/fills/config/promotions
+FR33: Epic 5 - produce day-end reconciliation artifacts aligning broker vs internal
+FR34: Epic 4 - change risk/universe/model parameters outside market hours (audited)
+FR35: Epic 2 - apply blackout/session-window rules restricting/throttling new risk
+FR36: Epic 2 - manage broker session auth lifecycle without exposing secrets via API
+FR37: Epic 2 - view explainability summaries tied to recommendations
+FR38: Epic 2 - record reason for manual override/exceptional action
+FR39: Epic 4 - stepped live-capital increases only after defined gates + explicit confirmation
 
 ## Epic List
+### Epic 1: Data Continuity & Tradable Universe Policy
+Epic goal: Keep market data continuous, maintain the tradable universe, and enforce “entries allowed vs suppressed” via degraded/policy modes.
+**FRs covered:** FR1, FR2, FR3, FR4, FR5, FR6, FR7
 
-{{epics_list}}
+### Epic 2: Risk-Gated Trading Decisions & Operator Trust Loop
+Epic goal: Convert feature/signal proposals into fail-closed act/block decisions, place/track orders (paper/live parity), enforce risk constraints, and keep the operator informed with stable reason codes and next actions.
+**FRs covered:** FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR15, FR16, FR17, FR27, FR28, FR29, FR35, FR36, FR37, FR38
+
+### Epic 3: Deterministic Replay & Backtest Evidence
+Epic goal: Simulate prior sessions through the same decision pipeline and compare performance across time splits/benchmarks under a shared cost model.
+**FRs covered:** FR18, FR19
+
+### Epic 4: Model Training, Governance & Staged Live Capital
+Epic goal: Run scheduled training, manage versioned artifacts, compare challenger vs champion with gates, support promotion/rollback approval outside market hours, and stage live capital increases only after explicit confirmation.
+**FRs covered:** FR20, FR21, FR22, FR23, FR24, FR25, FR26, FR34, FR39
+
+### Epic 5: Reconciliation, Immutable Audit, and Tax-Ready Exports
+Epic goal: Produce day-end reconciliation artifacts, maintain immutable audit trails, and export trade/charge/tax-ready records with turnover tracking.
+**FRs covered:** FR30, FR31, FR32, FR33
 
