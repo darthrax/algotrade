@@ -593,3 +593,31 @@ So that must-not-miss operational and governance signals are obvious immediately
 7. **Given** the system is in degraded mode (`REST_POLL`)
    **When** a new notification is generated
    **Then** it reflects degraded-mode semantics correctly and does not falsely imply new entries are allowed.
+
+### Story 2.9: Readiness & Liveness Endpoints (FR29 + Dead-Man’s-Switch Semantics)
+As a technical operator,
+I want the system to expose readiness and liveness endpoints for independent watchdog processes,
+So that “dead man’s switch” alerts and health gating behavior are reliable and operator-trustworthy.
+
+**Acceptance Criteria:**
+1. **Given** the system is running normally
+   **When** `GET /health` is called
+   **Then** it returns a response indicating main system liveness, and includes enough detail for watchdog/dead-man’s-switch logic.
+2. **Given** critical dependencies are not ready (e.g., DB unreachable, broker session unhealthy, clock sync failure)
+   **When** the operator or watchdog calls `/health`
+   **Then** it still reports liveness, but indicates dependency readiness is insufficient to trade, using explicit alive-but-not-trade-ready semantics.
+3. **Given** readiness is insufficient during market hours
+   **When** the inference/risk pipeline attempts to process eligible recommendations
+   **Then** the system blocks new entries (fail-closed) and surfaces an operator-visible reason consistent with dependency readiness.
+4. **Given** `/health` polling runs repeatedly (watchdog behavior)
+   **When** the system recovers dependencies
+   **Then** readiness transitions to ready within a bounded timeframe, and subsequent `/health` reads reflect the correct state.
+5. **Given** the system experiences transient failures during health evaluation
+   **When** `/health` is requested again
+   **Then** results are consistent and do not oscillate rapidly (no misleading “ready” blips while dependencies remain unhealthy).
+6. **Given** dead-man’s-switch monitoring is enabled
+   **When** the main system fails to respond within the watchdog timeout window during market hours
+   **Then** the system triggers an operator notification/alert and records evidence that the watchdog fired.
+7. **Given** `/health` output is used for operational automation
+   **When** health/dead-man’s-switch incidents include stable identifiers
+   **Then** incidents include stable IDs linking: alert -> incident -> operator trace via correlation_id (or run_id).
