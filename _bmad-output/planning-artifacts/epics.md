@@ -649,3 +649,32 @@ So that the system never opens new risk outside allowed times and the UI explain
 7. **Given** a policy/calendar configuration update occurs outside market hours
    **When** the new configuration is loaded
    **Then** it is applied on the next allowed cycle (not retroactively during market hours) and the change is audit-logged.
+
+### Story 2.11: Broker Session Authentication Lifecycle without Exposing Secrets (FR36)
+As a technical operator,
+I want the system to manage broker session authentication lifecycle (token/session refresh, expiry/re-auth, retry/recovery)
+without ever exposing broker secrets through operator-facing APIs or logs,
+So that broker connectivity stays reliable and risk actions remain secure.
+
+**Acceptance Criteria:**
+1. **Given** broker credentials/session material are stored in encrypted storage
+   **When** the system needs to establish Breeze connectivity
+   **Then** it authenticates successfully while ensuring secrets are never included in operator-facing API responses.
+2. **Given** a broker session token has an expiry time
+   **When** token expiry approaches or token becomes invalid
+   **Then** the system refreshes/re-authenticates automatically according to policy (or triggers recovery flow if refresh fails).
+3. **Given** re-authentication fails during market hours
+   **When** the recovery window is exceeded
+   **Then** the system enters a safe mode (e.g., position monitoring only / degraded semantics) and blocks new entries, and notifies the operator.
+4. **Given** operator-facing endpoints are called (health, mode, positions, etc.)
+   **When** endpoints render responses or UI refresh
+   **Then** they never expose broker tokens, credentials, or raw session payloads in any response body.
+5. **Given** transient failures occur during token refresh or re-auth attempts
+   **When** retries are executed
+   **Then** operator-facing notifications remain stable and non-spammy (idempotent per incident) and reason codes are consistent.
+6. **Given** structured logs are enabled with correlation IDs
+   **When** session auth success/failure events occur
+   **Then** logs include correlation_id and stable reason codes, but redact secrets (no plaintext secrets in log lines).
+7. **Given** the system transitions between connectivity modes (WS drop -> REST_POLL fallback -> reconnect/backfill)
+   **When** broker session auth state changes during those transitions
+   **Then** mode semantics remain correct and secrets are not leaked through any code path.
