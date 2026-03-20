@@ -849,3 +849,31 @@ So that retraining uses correctly labeled historical evidence (including reliabi
 7. **Given** label generation cannot complete for some recommendations due to missing required post-window price data
    **When** label generation runs
    **Then** those recommendations are left in a “pending/not labeled” state (not incorrectly labeled), and the operator/logs can identify which recommendations were not labeled and why.
+
+### Story 4.2: Nightly Retraining Procedure + Model Version Archival (FR21)
+As a technical operator,
+I want the system to run a scheduled nightly retraining job at the configured time and archive every model version with training metadata,
+So that model promotion/rollback is based on complete evidence without ad hoc manual steps.
+
+**Acceptance Criteria:**
+1. **Given** the scheduled retraining job is enabled
+   **When** the job reaches the configured nightly time (22:00 IST)
+   **Then** it starts automatically and creates a retraining run id.
+2. **Given** labeled recommendations exist
+   **When** retraining runs
+   **Then** the training pipeline uses accumulated data for training and excludes the permanent validation set from training/hyperparameter tuning.
+3. **Given** retraining runs
+   **When** feature engineering and model training completes
+   **Then** it evaluates the candidate model and produces validation metrics (accuracy, Sharpe ratio, maximum drawdown, precision, recall).
+4. **Given** retraining completes successfully
+   **When** the system archives the new model version
+   **Then** it stores training date, data date range, validation metrics, and the git commit hash for lineage.
+5. **Given** retraining runs at night
+   **When** the new model is not approved for deployment by gates
+   **Then** the current production model is retained and the failure/decision is logged (no silent deployment).
+6. **Given** the scheduled job fails due to an intermediate error
+   **When** the failure occurs
+   **Then** the run is marked as failed with an operator-visible reason code and no partial/invalid model version is promoted.
+7. **Given** the scheduled job is triggered again with the same run configuration (idempotent retry)
+   **When** the second trigger is handled
+   **Then** it does not create duplicate/contradictory archived model versions for the same run id/config.
