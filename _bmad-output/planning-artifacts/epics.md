@@ -621,3 +621,31 @@ So that “dead man’s switch” alerts and health gating behavior are reliable
 7. **Given** `/health` output is used for operational automation
    **When** health/dead-man’s-switch incidents include stable identifiers
    **Then** incidents include stable IDs linking: alert -> incident -> operator trace via correlation_id (or run_id).
+
+### Story 2.10: Blackout and Session-Window Rules (FR35) — Restrict/Throttle New Risk (with UX Contract Display)
+As a technical operator,
+I want the system to enforce blackout and session-window rules that restrict or throttle new risk,
+So that the system never opens new risk outside allowed times and the UI explains why and when entries resume.
+
+**Acceptance Criteria:**
+1. **Given** blackout/calendar rules are configured (full trading blackouts, partial restrictions, observation-only windows, last-N-minutes no new positions)
+   **When** the system evaluates the current market time for a symbol
+   **Then** the system produces an operator-facing policy status indicating whether new risk is allowed.
+2. **Given** the current time falls into a full trading blackout or an observation-only window
+   **When** the system receives a recommendation that would create a new position
+   **Then** the system blocks/suppresses the entry decision for that window (no new order submission).
+3. **Given** partial restrictions apply (e.g., no new positions after 14:00 IST; no new positions in last 10 minutes with existing positions managed)
+   **When** the system processes a recommendation during the restricted sub-window
+   **Then** the system blocks only the entry portion while still allowing managed exits/stops for existing positions.
+4. **Given** the last window for “no new positions” ends
+   **When** the system evaluates new signals
+   **Then** entries become allowed again only after data readiness requirements (freshness/data-mode gates) are satisfied.
+5. **Given** blackout rules interact with degraded mode (`REST_POLL`)
+   **When** both “entries suppressed by policy” and “entries suppressed by degraded semantics” apply
+   **Then** the system maintains correct combined behavior: no accidental re-enabling of entries due to mode transitions.
+6. **Given** the operator console is open
+   **When** a policy restriction becomes active or ends
+   **Then** the State/Contract Header reflects the updated contract and includes “entries allowed” interpretation and reason (contract-first UX).
+7. **Given** a policy/calendar configuration update occurs outside market hours
+   **When** the new configuration is loaded
+   **Then** it is applied on the next allowed cycle (not retroactively during market hours) and the change is audit-logged.
