@@ -5,6 +5,7 @@ stepsCompleted:
   - step-01-document-discovery
   - step-02-prd-analysis
   - step-03-epic-coverage-validation
+  - step-04-ux-alignment
 documentsIncluded:
   prd: _bmad-output/planning-artifacts/prd.md
   architecture: _bmad-output/planning-artifacts/architecture.md
@@ -189,3 +190,21 @@ No missing FR coverage detected: all PRD Functional Requirements `FR1..FR39` are
 - Total PRD FRs: 39
 - FRs covered in epics: 39
 - Coverage percentage: 100%
+
+## UX Alignment Assessment
+
+### UX Document Status
+- Found UX documentation: `ux-design-specification.md`
+
+### Alignment Issues
+No major misalignments detected between UX, PRD, and Architecture. Key UX elements map cleanly to PRD capabilities:
+- “Feed dies / entries must stop” (UX Journey 2) aligns with PRD degraded-mode semantics (`REST_POLL`) and entry suppression policy (FR5/FR7).
+- Emergency kill switch UX (UX Journey 2/4 components, two-step confirmation) aligns with the PRD emergency stop capability (FR16) and the architecture’s privileged fail-closed control-plane endpoints (`POST /kill`, `POST /mode`).
+- Governance UX lockout + promotion approval flows align with PRD human sign-off and promotion/rollback gates (FR24/FR25/FR26/FR39).
+- Reconciliation checklist UX aligns with PRD day-end reconciliation artifacts (FR33) and the architecture’s reconciliation gate framing.
+- Alert Stream UX aligns with PRD operator notifications (FR28) and the architecture’s generic “notifications”/alerting responsibilities.
+- Explainability/top-features UX aligns with PRD explainability surfacing (FR37) while preserving the risk-gateway constraint intent.
+
+### Warnings
+- The architecture document describes an “operator console” and “notifications” at a design level, but does not explicitly name `Streamlit` or `Telegram` in the architecture text. This is likely fine (PRD allows “Telegram or equivalent”), but implementation should confirm the concrete choice matches UX expectations.
+- UX targets WCAG Level AA and specifies accessibility mechanics in detail; the architecture document focuses on control-plane contracts and back-end boundaries and does not explicitly cover front-end accessibility requirements. Ensure the operator UI implementation enforces those UX accessibility constraints.
