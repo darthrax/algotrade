@@ -2,7 +2,7 @@
 project_name: 'algotrade'
 user_name: 'Darthrax'
 date: '2026-03-20T14:51:05+05:30'
-sections_completed: ['technology_stack', 'language_specific', 'framework_specific', 'testing_rules']
+sections_completed: ['technology_stack', 'language_specific', 'framework_specific', 'testing_rules', 'code_quality_style']
 existing_patterns_found: 5
 ---
 
@@ -118,4 +118,31 @@ _Intermediate mode: documented after discovery phase_
     - ordering/risk state machine edges
     - suppressed/block-by-policy cases producing traceable events
     - broker-vs-internal reconciliation gating logic
+
+### Code Quality & Style Rules
+
+- **Respect the decision-spine boundaries in code organization:**
+  - `ml/` must only produce signals/candidate models.
+  - `services/risk_execution/` is the only path from “signal proposal” to “order submission”.
+  - `adapters/` must translate broker payloads to domain shapes without embedding decision logic.
+
+- **Deterministic/pure code where possible:**
+  - Domain logic should be written to be deterministic for a fixed input (especially replay/backtest decision pipeline).
+  - Avoid hidden global state in decision code.
+
+- **Type hints and explicit contracts:**
+  - Add type annotations for public boundaries (API request/response shapes, domain entities, repository interfaces).
+  - Prefer explicit data shapes over implicit dict-shaped payloads in critical paths.
+
+- **Naming & structure consistency (reinforced):**
+  - Continue enforcing `snake_case`/`PascalCase`/`UPPER_SNAKE_CASE`.
+  - Ensure correlation/linkage fields are consistently named (`correlation_id`, `*_id`, etc.).
+
+- **Minimal, high-signal documentation:**
+  - Comments should explain “why” for non-obvious invariants (fail-closed, idempotency, suppression semantics).
+  - Do not document obvious behavior; keep the agent context lean.
+
+- **Security hygiene in code:**
+  - Never log raw secrets or full `Authorization` header values.
+  - Ensure token handling and privileged action checks are centralized (dependency/module), not scattered.
 
