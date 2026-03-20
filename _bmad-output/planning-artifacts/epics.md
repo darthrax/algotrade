@@ -1018,3 +1018,31 @@ So that model promotion remains governance-controlled and auditable.
    **When** the next retraining cycle runs
    **Then** the decision context remains attributable to the candidate that was approved/rejected (no evidence mix-up across candidates).
 
+### Story 4.8: Stepped Live-Capital Increases Only After Defined Gates and Explicit Operator Confirmation (FR39)
+As a technical operator,
+I want the system to enforce stepped live-capital increases only after defined gates and explicit operator confirmation,
+So that live scaling never happens until governance and performance evidence are satisfied.
+
+**Acceptance Criteria:**
+1. **Given** live capital staging is enabled (Stage 1–4) and a stage transition is due
+   **When** the system evaluates stage gate conditions
+   **Then** it allows movement to the next stage only if gates pass.
+2. **Given** the system is at a current stage (e.g., Stage 2)
+   **When** gates for moving to the next stage fail
+   **Then** it does not increase live capital and retains the current stage.
+3. **Given** stage gates pass and operator confirmation is required
+   **When** the operator confirms explicitly (outside market hours if required)
+   **Then** the system schedules/enacts the capital stage change and records the confirmation and associated evidence.
+4. **Given** the system is in a locked/governance state
+   **When** the operator attempts stage changes at a forbidden time
+   **Then** the action is blocked and the UI shows “why locked / when allowed.”
+5. **Given** a stage change is triggered and automated jobs are concurrently running (e.g., retraining)
+   **When** the stage decision is finalized
+   **Then** stage state remains consistent and does not mix evidence across different candidates.
+6. **Given** the stage transition decision request is retried (same idempotency context)
+   **When** retry processing occurs
+   **Then** it is idempotent: no duplicate stage transitions or contradictory stage records are created.
+7. **Given** the system is in degraded mode or risk limits are tight
+   **When** stage increase is attempted
+   **Then** risk gating still applies (stage increase cannot bypass risk constraints).
+
