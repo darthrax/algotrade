@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2, 3]
+stepsCompleted: [1, 2, 3, 4]
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/product-brief-algotrade-2026-03-20.md
@@ -84,3 +84,43 @@ The UI should make these actions nearly automatic:
 - **Safety through constrained affordances**: dangerous actions require deliberate user confirmation and explicit audit context.
 - **Traceability by default**: decision context shown in the UI is backed by the same evidence the operator can reconcile later.
 - **Progressive disclosure, not cognitive load**: reveal detail only when the operator asks for it.
+
+## Desired Emotional Response
+
+### Primary Emotional Goals
+- **Calm control**: the operator feels steady and oriented, even when the system is degraded or locked.
+- **Trust without blind faith**: “I can believe this because it’s explainable and reconcilable,” not “I hope it’s fine.”
+- **Instant clarity**: the operator experiences quick comprehension of mode + act/block outcomes + next action.
+- **Preparedness**: when something goes wrong (e.g., WebSocket loss), the operator feels supported by an explicit, predictable contract.
+- **Closure and confidence at day end**: reconciliation feels like a checklist that resolves, not a mystery to investigate.
+
+### Emotional Journey Mapping
+- **First discovery / start-of-day**: curiosity becomes reassurance as the morning overview quickly communicates watchlist readiness and whether entries are allowed yet.
+- **During the core loop (market hours)**: focused attentiveness—operator feels “in command” because reason codes and next actions reduce uncertainty.
+- **Observation-only / locked windows**: tension is replaced with relief when the UI makes “no new entries by policy” intentional and unambiguous.
+- **Degraded mode transition (`WEBSOCKET` → `REST_POLL`)**: anxiety is dampened by explicit mode labels and a clear contract: monitor/maintain positions, suppress new entries.
+- **Risk gate rejections**: skepticism converts to confidence when the block reason is stable and paired with “what would change” expectations.
+- **Governance moments (config/model approvals)**: seriousness without fear—controls feel locked when required and review feels safe when allowed.
+- **EOD reconciliation**: satisfaction comes from evidence-based resolution (pass/failed/waived with explicit next steps).
+
+### Micro-Emotions
+- Confidence instead of confusion (fast “what state are we in?”)
+- Trust instead of skepticism (reason codes tied to evidence)
+- Relief instead of anxiety (degraded-mode semantics are explicit)
+- Accomplishment instead of frustration (next actions are clear and constrained)
+- Satisfaction (and occasional delight) from “boring reliability” that consistently delivers clarity
+
+### Design Implications
+- Always-visible **contract-first status** (normal vs degraded vs locked) with explicit meaning for each.
+- **Act/Block decision cards** that present a consistent causal chain and never leave the operator guessing whether silence means success.
+- **Reason codes + operator interpretation + next step** on every reject/block.
+- **Reconciliation as a workflow** (pass/fail/needs waiver) rather than a buried dashboard detail.
+- **Kill switch ergonomics**: prominent but not frantic; two-step confirmation reinforces safety without panic.
+- **Governance lock UX**: disabled controls + visible “why locked” tied to market-hours policy.
+
+### Emotional Design Principles
+- **Truthfulness over aesthetics**: the UI must mirror system semantics precisely (including suppression-by-policy), never approximate it.
+- **Attention compression**: show what the operator needs now; hide forensic detail unless asked.
+- **Guided next actions**: every failure mode ends with “here’s what to do next,” not just an explanation.
+- **Evidence-backed reassurance**: explanations should map to logs/reconciliation so trust is earned.
+- **Constrained affordances for dangerous actions**: deliberate friction only where risk increases.
