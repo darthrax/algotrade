@@ -537,3 +537,31 @@ So that capital loss remains bounded within guardrails and the system fails safe
 7. **Given** the same evaluation is retried (same idempotency key / `correlation_id`)
    **When** risk evaluation re-runs
    **Then** the constraint outcome and reason code remain identical (no oscillation for the same inputs/context).
+
+### Story 2.7: Operator Console Positions & Lifecycle Inspection (FR27 + UX State Visibility)
+As a technical operator,
+I want the local console to display open positions, balances, and order lifecycle state clearly,
+So that I can verify the system is tracking capital safely and reconciling actions correctly during the session.
+
+**Acceptance Criteria:**
+1. **Given** the operator is viewing the console during market hours
+   **When** the console loads (normal refresh)
+   **Then** it displays a “primary views” panel for positions, health/mode, and last state update, and those views load within the operator performance expectation (NFR4: ~2 seconds on normal local load).
+2. **Given** there are open positions
+   **When** the positions view is rendered
+   **Then** it lists each open position with: symbol, entry price, current price, unrealized P&L, stop-loss, and time in position.
+3. **Given** there are no open positions
+   **When** the positions view is rendered
+   **Then** it shows an explicit empty state (not a blank area) indicating the system is currently flat.
+4. **Given** an order lifecycle transitions (e.g., partial fill, confirmed open, reject/timeout termination leading to no new position)
+   **When** the corresponding position state changes
+   **Then** the positions view reflects the new state consistently (no mismatch between order lifecycle status and displayed position state).
+5. **Given** the operator views the active order lifecycle state for a symbol
+   **When** they open lifecycle details for that symbol (or expand the row)
+   **Then** the UI shows the current lifecycle state and at least the most recent transition reason/code.
+6. **Given** the system is in degraded/policy states
+   **When** the operator opens the console
+   **Then** the UI still shows the active contract/mode and the “entries allowed” interpretation alongside the positions view (contract-first semantics, per UX).
+7. **Given** console data retrieval fails temporarily (e.g., transient internal API error)
+   **When** the console refresh runs
+   **Then** it surfaces a user-facing error with a stable reason label and “next action” guidance (retry/wait), rather than silently hiding data.
