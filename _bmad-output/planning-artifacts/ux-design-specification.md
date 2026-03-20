@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/product-brief-algotrade-2026-03-20.md
@@ -480,3 +480,136 @@ flowchart TD
 - Prevent misinterpretation under stress by making degraded/policy suppression explicit and consistent.
 - Use progressive disclosure: overview first, trace/justification on demand, reconciliation at the end.
 - Ensure recovery paths are explicit: reconnect/backfill sequences, waiver gates, approval timing.
+
+## Component Strategy
+
+### Design System Components (foundation from step 6–8)
+These are “available” via the tokens-first design system (Theme 1/2/3):
+- Theme tokens (dark background/panel/text/muted + semantic accents for OK/Warning/Block and Normal/Degraded/Locked)
+- Base panel/card primitives with airy layout and stable spacing rhythm
+- State/severity primitives (badges + icons + operator-facing labels; no color-only semantics)
+- Typography scale (sans-serif) optimized for fast scanning under stress
+
+### Custom Components (selected by you: `1–7`)
+
+#### 1) State/Contract Header
+Purpose: Provide instant contract clarity in a fixed UI location every screen.
+Content:
+- Contract/mode: `Normal (RTH)`, `Degraded (REST_POLL)`, `Locked`
+- Entries allowed: explicit yes/no per policy
+- Next window guidance: what changes next
+- Must-not-miss alerts: top 1–3
+States:
+- Normal / Degraded / Locked
+- Unknown / Error (fallback messaging based on last-known safe contract)
+Accessibility:
+- `aria-live="polite"` status region for contract/mode changes
+- Focusable “Why?” affordance; clear keyboard navigation
+Interaction behavior:
+- Degraded/Locked always communicates behavioral implications (not just a label).
+
+#### 2) Act/Block Decision Card (with next action)
+Purpose: Make every decision outcome legible and actionable.
+Content:
+- Act vs Block summary
+- Stable reason code (operator-facing)
+- Short plain-language explanation
+- Explicit next action (wait/observe/reconcile/kill-switch confirmation)
+- “View full trace” drill-down entry point
+States:
+- Act / Block
+- Loading trace / Trace unavailable
+Accessibility:
+- Reason text in its own readable region; consistent order for screen readers
+Interaction behavior:
+- Cards never rely on “silence = success.”
+
+#### 3) Decision Trace / Drill-down
+Purpose: Let the operator inspect “what caused this” while preserving the same causal ordering every time.
+Content (progressive disclosure):
+- Compressed causal chain: freshness/data mode -> features/signal snapshot -> risk checks -> broker outcome OR explicit suppression
+- Evidence blocks: intermediate flags (missingness, staleness, policy category) with operator language
+States:
+- Collapsed / Expanded
+- Partial data / Missing evidence (with explanation of what is unknown)
+Accessibility:
+- Accordion semantics (`role="button"`, `aria-expanded`)
+- Keyboard navigable within the trace
+
+#### 4) Reconciliation Status Panel (pass/fail/waiver + next steps)
+Purpose: Turn EOD reconciliation into a predictable closure ritual.
+Content:
+- Status: Pass / Fail / Needs waiver / Block next-day live
+- Broker vs internal alignment highlights
+- If Fail: clear next action (“resolve mismatch” vs “waive with audit note”)
+- Evidence pointers for exports/checklists
+States:
+- Pending / Running / Pass / Fail / Needs waiver / Waiver submitted
+Accessibility:
+- Summary in `aria-live="polite"`
+
+#### 5) Governance Lockout / Approval Card
+Purpose: Protect risk-increasing changes during locked windows and make outside-lock review feel calm and auditable.
+Content:
+- Why locked (market-hours window + policy)
+- Next allowed time
+- Outside lock: review card with requested change + version lineage + candidate metrics summary
+- Approve/Reject + required audit note entry
+States:
+- Locked / Review available / Approval recorded / Approval denied
+Accessibility:
+- Disabled controls accompanied by `aria-describedby` explanation
+- Modal/dialog for confirmations and audit note entry
+
+#### 6) Alert Stream (severity accents + actionable callouts)
+Purpose: Provide monitoring-style event feed that matches operator expectations.
+Content per row:
+- Severity accent + event label
+- “What changed” summary
+- Next action (ack/wait/open trace)
+States:
+- Loading / Empty feed / Degraded feed
+Accessibility:
+- Alerts grouped in a single “alert region”; action buttons focusable
+Interaction behavior:
+- Critical alerts require explicit acknowledgment; evidence persists.
+
+#### 7) Kill Switch Two-Step Confirm
+Purpose: Safety-critical emergency action ergonomics.
+Content:
+- First step: what will happen at a high level
+- Second step: explicit confirm (type “CONFIRM” or checkbox)
+- After activation: show Locked contract + required recovery steps
+States:
+- Ready / Confirm step / Activated / Activation failed
+Accessibility:
+- Dialog role with focus trap and safe ESC behavior (cancel only on first step)
+
+### Component Implementation Strategy
+- Implement using Streamlit-first rendering with the tokens-first theme variables (dark/airy, Theme 1/2/3).
+- Enforce semantic mapping consistently across all components:
+  - Normal vs Degraded (`REST_POLL`) vs Locked changes allowed actions and messaging, not just visuals.
+  - Act/Block outcomes always pair reason code + operator-language explanation + next action.
+- Keep the “State/Contract Header” present across views (multi-view UX) so the operator never loses the contract context.
+- Reuse component interaction patterns:
+  - Accordion trace drill-down
+  - Checklist-style reconciliation UI
+  - Modal patterns for waivers + kill switch confirmation
+
+### Implementation Roadmap
+Phase 1 (Journeys 1–2: trust in normal + degraded)
+- State/Contract Header
+- Act/Block Decision Card
+- Alert Stream (mode + degraded events)
+- Decision Trace (expanded on demand)
+
+Phase 2 (Journeys 3–4: closure + governance protection)
+- Reconciliation Status Panel
+- Governance Lockout / Approval Card
+- Waiver flow integration
+- Kill Switch Two-Step Confirm
+
+Phase 3 (Hardening / quality)
+- Edge-case coverage for trace/evidence availability
+- Accessibility pass (keyboard navigation + contrast across Theme 1/2/3)
+- DR evidence pointers wiring and end-to-end consistency checks
