@@ -4,6 +4,7 @@ project_name: algotrade
 stepsCompleted:
   - step-01-document-discovery
   - step-02-prd-analysis
+  - step-03-epic-coverage-validation
 documentsIncluded:
   prd: _bmad-output/planning-artifacts/prd.md
   architecture: _bmad-output/planning-artifacts/architecture.md
@@ -134,3 +135,57 @@ Risk Mitigations:
 
 ### PRD Completeness Assessment
 The PRD contains an explicit, numbered `FR1..FR39` list and a dedicated `Non-Functional Requirements` section with measurable operational/security/integration constraints. Additional domain/regulatory and integration constraints are also present in clearly separated sections, supporting traceability without relying on unstated assumptions.
+
+## Epic Coverage Validation
+
+### Coverage Matrix
+
+| FR Number | PRD Requirement | Epic Coverage | Status |
+| --------- | --------------- | -------------- | ------ |
+| FR1 | The system can ingest streaming market data for subscribed instruments during the trading session. | Epic 1 | ✓ Covered |
+| FR2 | The system can retrieve and persist historical price series to backfill gaps and onboard new symbols. | Epic 1 | ✓ Covered |
+| FR3 | The system can reject or reconcile duplicate and out-of-sequence ticks per defined rules. | Epic 1 | ✓ Covered |
+| FR4 | The system can detect missing data beyond a defined threshold during market hours and notify the operator. | Epic 1 | ✓ Covered |
+| FR5 | The system can operate in a degraded quote mode when streaming is unavailable and expose the active mode per instrument. | Epic 1 | ✓ Covered |
+| FR6 | The operator can maintain a tradable universe using configurable liquidity, price, and event-proximity filters. | Epic 1 | ✓ Covered |
+| FR7 | The system can block new entries for instruments or sessions where policy forbids trading. | Epic 1 | ✓ Covered |
+| FR8 | The system can compute features from available market data without using disallowed future information. | Epic 2 | ✓ Covered |
+| FR9 | The system can emit trade recommendations with direction, confidence, and regime context. | Epic 2 | ✓ Covered |
+| FR10 | The system can suppress recommendations when required inputs are stale or the active data mode forbids new risk. | Epic 2 | ✓ Covered |
+| FR11 | The system can persist the feature context used for each recommendation for later audit. | Epic 2 | ✓ Covered |
+| FR12 | The operator can run the product in a simulated-fill mode or a broker-backed mode with shared decision logic. | Epic 2 | ✓ Covered |
+| FR13 | The system can evaluate each recommendation against enumerated risk checks before placing orders. | Epic 2 | ✓ Covered |
+| FR14 | The system can place, amend, and close orders with protective exit parameters according to policy. | Epic 2 | ✓ Covered |
+| FR15 | The system can advance and terminate order lifecycle states including partial fills, rejects, and timeouts. | Epic 2 | ✓ Covered |
+| FR16 | The operator can invoke an emergency stop that closes positions and halts new risk until cleared. | Epic 2 | ✓ Covered |
+| FR17 | The system can enforce position count, concentration, spread, and daily loss constraints. | Epic 2 | ✓ Covered |
+| FR18 | The system can simulate prior sessions through the same decision pipeline used during live operation. | Epic 3 | ✓ Covered |
+| FR19 | The operator can compare strategy performance across time splits and benchmarks under a shared cost model. | Epic 3 | ✓ Covered |
+| FR20 | The system can derive training labels from stored recommendations and subsequent price outcomes. | Epic 4 | ✓ Covered |
+| FR21 | The system can run scheduled training jobs that produce candidate models without manual ad hoc steps. | Epic 4 | ✓ Covered |
+| FR22 | The system can store and retrieve versioned model artifacts with training data span and configuration lineage. | Epic 4 | ✓ Covered |
+| FR23 | The system can compare candidate models to the production champion using agreed performance gates. | Epic 4 | ✓ Covered |
+| FR24 | The system can withhold promotion when gates fail and retain the prior champion. | Epic 4 | ✓ Covered |
+| FR25 | The system can revert to a prior champion when live monitoring breaches rollback policy. | Epic 4 | ✓ Covered |
+| FR26 | The operator can approve or reject a promotion decision outside market hours when human sign-off is required. | Epic 4 | ✓ Covered |
+| FR27 | The operator can inspect positions, balances, and lifecycle state through a local console. | Epic 2 | ✓ Covered |
+| FR28 | The system can deliver notifications for connectivity, risk, training, and health events through a configured channel. | Epic 2 | ✓ Covered |
+| FR29 | The system can report readiness and liveness for independent watchdog processes. | Epic 2 | ✓ Covered |
+| FR30 | The system can export trades, charges, and summaries for accounting and tax workflows. | Epic 5 | ✓ Covered |
+| FR31 | The system can track cumulative turnover and surface proximity to statutory audit thresholds. | Epic 5 | ✓ Covered |
+| FR32 | The system can record immutable audit trails for recommendations, orders, fills, configuration changes, and model promotions. | Epic 2 | ✓ Covered |
+| FR33 | The system can produce day-end reconciliation artifacts aligning broker activity with internal records. | Epic 5 | ✓ Covered |
+| FR34 | The operator can change risk, universe, and model parameters outside market hours with each change audited. | Epic 4 | ✓ Covered |
+| FR35 | The system can apply blackout and session-window rules that restrict or throttle new risk. | Epic 2 | ✓ Covered |
+| FR36 | The system can manage broker session authentication lifecycle without exposing secrets through operator-facing APIs. | Epic 2 | ✓ Covered |
+| FR37 | The operator can view explainability summaries tied to individual recommendations. | Epic 2 | ✓ Covered |
+| FR38 | The system can record a reason when performing a manual override or exceptional action. | Epic 2 | ✓ Covered |
+| FR39 | The system can enforce stepped live-capital increases only after defined gates and explicit operator confirmation. | Epic 4 | ✓ Covered |
+
+### Missing Requirements
+No missing FR coverage detected: all PRD Functional Requirements `FR1..FR39` are present in the epics/stories document.
+
+### Coverage Statistics
+- Total PRD FRs: 39
+- FRs covered in epics: 39
+- Coverage percentage: 100%
