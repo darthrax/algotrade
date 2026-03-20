@@ -2,7 +2,7 @@
 project_name: 'algotrade'
 user_name: 'Darthrax'
 date: '2026-03-20T14:51:05+05:30'
-sections_completed: ['technology_stack']
+sections_completed: ['technology_stack', 'language_specific']
 existing_patterns_found: 5
 ---
 
@@ -34,5 +34,29 @@ _Intermediate mode: documented after discovery phase_
 
 ## Critical Implementation Rules
 
-_Documented after discovery phase_
+### Language-Specific Rules
+
+- **Python naming (agents writing Python):**
+  - `snake_case` for functions/variables
+  - `PascalCase` for classes
+  - `UPPER_SNAKE_CASE` for constants
+
+- **Schema + event naming (applies to Python code that defines/uses them):**
+  - DB schema: `snake_case` for tables/columns/indexes/constraints
+  - Events (async/lifecycle): `snake_case` event names (e.g. `signal_emitted`, `risk_rejected`, `order_state_changed`)
+  - Identifiers: suffix by role (`*_id`, `correlation_id`, `model_version_id`, `signal_id`, `order_id`)
+
+- **Serialization / API contracts:**
+  - Timestamps everywhere in APIs + audit/events are **ISO-8601 UTC** (example: `2026-03-20T08:45:00Z`)
+  - JSON keys are **`snake_case`** for API payloads and event payloads
+  - All API endpoints return the same wrapper shape:
+    - Success: `{ "ok": true, "data": ..., "correlation_id": "..." }`
+    - Failure: `{ "ok": false, "error": { "code": "...", "message": "...", "correlation_id": "..." } }`
+
+- **Error handling + “no silent success”:**
+  - Use **stable machine error codes** to distinguish validation errors vs risk rejections vs broker transient/permanent failures
+  - “Suppressed/block-by-policy” decisions (e.g., `REST_POLL` entry suppression) must emit a traceable event and an operator-facing reason code
+
+- **Async idempotency requirement (implemented in Python async consumers):**
+  - Every async handler must tolerate duplicate deliveries using `correlation_id` plus a persisted idempotency key (e.g., `event_id` or equivalent persisted key)
 
