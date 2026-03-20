@@ -2,7 +2,7 @@
 project_name: 'algotrade'
 user_name: 'Darthrax'
 date: '2026-03-20T14:51:05+05:30'
-sections_completed: ['technology_stack', 'language_specific', 'framework_specific']
+sections_completed: ['technology_stack', 'language_specific', 'framework_specific', 'testing_rules']
 existing_patterns_found: 5
 ---
 
@@ -88,4 +88,34 @@ _Intermediate mode: documented after discovery phase_
 - **Startup/readiness gating:**
   - The FastAPI application lifecycle must ensure broker connectivity health checks and required “gap fill + reconciliation gating” happens before accepting new trading actions.
   - Health/readiness endpoints in the API must expose enough operator signal for watchdog/dead-man’s-switch semantics.
+
+### Testing Rules
+
+- **Unit vs integration boundaries:**
+  - Unit tests cover pure/domain logic (risk state machine transitions, naming/serialization helpers, idempotency key logic).
+  - Integration tests cover DB persistence, outbox/durable-event reads, and broker adapter translation.
+
+- **Idempotency correctness tests:**
+  - Tests must include duplicate-delivery scenarios for async consumers, verifying idempotency keys prevent re-triggering capital actions.
+
+- **Fail-closed behavior tests:**
+  - When risk/execution dependencies are unhealthy or raise, tests must assert:
+    - endpoints return `ok: false`
+    - no state transitions into “submitted/new risk action” pathways
+
+- **Decision-pipeline parity tests (replay vs live):**
+  - Deterministic replay/backtest must run through the same decision pipeline as live/paper (except the final broker submission switch).
+  - Tests should validate equivalence of outputs across replay runs for the same inputs.
+
+- **Contract/shape tests for API responses:**
+  - Tests must validate the standard wrapper shape:
+    - Success: `{ "ok": true, "data": ..., "correlation_id": "..." }`
+    - Failure: `{ "ok": false, "error": { "code": "...", "message": "...", "correlation_id": "..." } }`
+  - Ensure timestamps are UTC/ISO-8601.
+
+- **Coverage expectation (lean but essential):**
+  - Prioritize tests for:
+    - ordering/risk state machine edges
+    - suppressed/block-by-policy cases producing traceable events
+    - broker-vs-internal reconciliation gating logic
 
