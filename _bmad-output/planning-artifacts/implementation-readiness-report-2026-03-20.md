@@ -6,6 +6,7 @@ stepsCompleted:
   - step-02-prd-analysis
   - step-03-epic-coverage-validation
   - step-04-ux-alignment
+  - step-05-epic-quality-review
 documentsIncluded:
   prd: _bmad-output/planning-artifacts/prd.md
   architecture: _bmad-output/planning-artifacts/architecture.md
@@ -208,3 +209,21 @@ No major misalignments detected between UX, PRD, and Architecture. Key UX elemen
 ### Warnings
 - The architecture document describes an “operator console” and “notifications” at a design level, but does not explicitly name `Streamlit` or `Telegram` in the architecture text. This is likely fine (PRD allows “Telegram or equivalent”), but implementation should confirm the concrete choice matches UX expectations.
 - UX targets WCAG Level AA and specifies accessibility mechanics in detail; the architecture document focuses on control-plane contracts and back-end boundaries and does not explicitly cover front-end accessibility requirements. Ensure the operator UI implementation enforces those UX accessibility constraints.
+
+## Epic Quality Review
+
+### Review Summary
+- Epic goals and story narratives are consistently written in an operator-centric voice (user outcomes), not as technical scaffolding milestones.
+- No explicit forward dependencies between stories were detected (no “depends on Story …”, “wait for future story …”, or “future story” references found during targeted scans).
+- Acceptance criteria are generally BDD-style (`Given/When/Then`) and include meaningful edge/failure conditions across multiple stories (for example: label generation pending/not-labeled, scheduled retraining job failures, order lifecycle rejects/timeouts, and reconciliation mismatch blocking/waiver behavior).
+
+### 🔴 Critical Violations
+- None found based on structural checks (epic user value, story forward-dependency references, and presence of executable-style acceptance criteria).
+
+### 🟠 Major Issues
+- Potential epic-independence dependency risk: `Epic 3` / `Story 3.1` (“Historical Replay Tool … through the current production model”) assumes a “production model” is available even if `Epic 4` (model governance + promotion pipeline) is not implemented yet.  
+  - Recommendation: ensure the repository has an initial/seeding mechanism for the “current production model” (or explicitly document that Epic 4 must precede Epic 3 for a working end-to-end replay) so Epic 3 does not rely on forward work.
+
+### 🟡 Minor Concerns
+- Story 3.x and 4.x acceptance criteria focus heavily on correctness/evidence and idempotency, but may benefit from adding one explicit “data provider unavailable / partial payload / replay scheduler failure” scenario per story (to strengthen the operational failure-mode traceability pattern used in earlier epics).
+- Some stories intentionally blend UI/UX requirements (e.g., kill switch two-step confirm) with back-end behavior assertions; that is acceptable for end-to-end readiness, but it increases implementation surface area for a single story. If you want tighter layering, split UI-only vs control-plane-only assertions—but only if you also keep the story independently completable.
