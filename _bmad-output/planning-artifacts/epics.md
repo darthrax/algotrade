@@ -565,3 +565,31 @@ So that I can verify the system is tracking capital safely and reconciling actio
 7. **Given** console data retrieval fails temporarily (e.g., transient internal API error)
    **When** the console refresh runs
    **Then** it surfaces a user-facing error with a stable reason label and “next action” guidance (retry/wait), rather than silently hiding data.
+
+### Story 2.8: Operator Notifications for Connectivity, Risk, Training, and Health (FR28 + UX)
+As a technical operator,
+I want the system to deliver notifications for connectivity, risk, training, and health events through a configured channel (Telegram/dashboard),
+So that must-not-miss operational and governance signals are obvious immediately.
+
+**Acceptance Criteria:**
+1. **Given** WebSocket connectivity changes occur (disconnect/reconnect)
+   **When** the system detects the event
+   **Then** it sends an operator notification including the new data-mode contract (`WEBSOCKET` ↔ `REST_POLL`) and what it means for entry permission.
+2. **Given** the risk layer blocks an action or enforces a constraint (e.g., risk rejection, daily loss block)
+   **When** the rejection/block occurs
+   **Then** the system sends a notification including stable reason code(s), operator-facing interpretation, and an explicit next action expectation.
+3. **Given** scheduled retraining runs and completes
+   **When** retraining succeeds
+   **Then** a notification is sent indicating success and key identifiers (run id / model candidate id) without leaking secrets.
+4. **Given** scheduled retraining runs and fails
+   **When** retraining fails
+   **Then** a notification is sent including failure reason codes / summary for operator action and debugging.
+5. **Given** health/dependency readiness changes (e.g., dead-man’s-switch status, DB/broker session readiness)
+   **When** the health state updates
+   **Then** the system sends a notification summarizing “what changed” and the operator next safe action (ack/wait/open trace).
+6. **Given** notifications can be delivered multiple times due to transient errors
+   **When** the same notification is retried (same event correlation_id / event_id)
+   **Then** the system deduplicates notification delivery and does not spam duplicate messages for the same event.
+7. **Given** the system is in degraded mode (`REST_POLL`)
+   **When** a new notification is generated
+   **Then** it reflects degraded-mode semantics correctly and does not falsely imply new entries are allowed.
