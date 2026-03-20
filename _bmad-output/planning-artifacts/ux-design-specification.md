@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
+stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9]
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/product-brief-algotrade-2026-03-20.md
@@ -331,3 +331,32 @@ All state and reason-code text must remain readable at the console’s default f
 - Contrast: ensure minimum contrast for text over background for every theme (target ~4.5:1 for normal text; 3:1 for larger text).
 - Non-color cues: every “Block / Degraded / Locked” must include label + icon + operator-facing reason code.
 - Focus visibility: keyboard focus states must be clearly visible on interactive elements (alerts, confirmation flows, settings).
+
+## Design Direction Decision
+
+### Design Directions Explored
+We explored 6 visual direction variations combining:
+- contract-first state semantics (Normal vs Degraded `REST_POLL` vs Locked)
+- act vs block clarity with stable, operator-facing reason codes
+- decision trace / “what happened when” understanding (timeline-style)
+- reconciliation as an end-of-day workflow that resolves pass/fail/waiver clearly
+- Grafana/Datadog/TradingView-inspired emphasis on accents, drill-down, and scanability
+
+### Chosen Direction
+**Chosen Direction:** Direction 2 — *Contract-first + Decision Trace + Reconciliation-ready* layout  
+**Theme:** Theme 3 (Charcoal Violet)  
+**Primary emphasis:** Make “entries allowed vs suppressed by policy” undeniable before surfacing deeper decision details.
+
+### Design Rationale
+Direction 2 best supports your core operator need: emotional certainty through contract clarity.
+- It prevents the trust killer where silence could be misread as “all good,” because degraded/locked/policy suppression is explicitly framed with next actions.
+- It matches the emotional goal of calm preparedness by showing the operating contract first, then translating act/block outcomes into an inspectable causal trace.
+- It operationalizes reconciliation satisfaction by positioning reconciliation readiness cues in a predictable, scan-friendly place.
+
+### Implementation Approach
+- Apply Theme 3 tokens for background/panels/text and for stable accents (OK / Warning / Block and Normal / Degraded / Locked).
+- Implement Direction 2 as a two-panel layout:
+  - Panel A: fixed “State/Contract” region (mode contract + entries-allowed policy + next window guidance)
+  - Panel B: decision trace card (act/block with stable reason code + “what to do next”) + a reconciliation status block (pass/fail/waiver cues)
+- Ensure theme switching is visual-only: it must not change any semantics, labels, or permission/risk logic.
+- Ensure every “suppressed” or “blocked” outcome ends with an explicit next action (ack/wait/reconcile/kill switch with confirmation).
