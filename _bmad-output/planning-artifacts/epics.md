@@ -200,3 +200,34 @@ Epic goal: Run scheduled training, manage versioned artifacts, compare challenge
 Epic goal: Produce day-end reconciliation artifacts and export trade/charge/tax-ready records with turnover tracking.
 **FRs covered:** FR30, FR31, FR33
 
+
+## Epic 1: Data Continuity & Tradable Universe Policy
+Epic goal: Keep market data continuous, maintain the tradable universe, and enforce "entries allowed vs suppressed" via degraded/policy modes.
+
+### Story 1.1: WebSocket Tick Ingestion + Dedup Persistence
+As a technical operator,
+I want the system to validate and persist incoming Breeze WebSocket ticks with dedup and monotonic timestamp guarantees,
+So that the downstream feature/prediction pipeline has a clean, auditable, continuously growing time series.
+
+**Acceptance Criteria:**
+1. **Given** the system is configured with an active watchlist containing a symbol and the Breeze WebSocket is connected (data source mode = `WEBSOCKET`)
+   **When** a tick arrives for that symbol
+   **Then** the tick is validated and persisted to TimescaleDB with `data_source = 'WEBSOCKET'`.
+2. **Given** a previous stored tick exists for the same `stock_token` at the same `resolution`
+   **When** a new incoming tick has a timestamp `<=` the last stored timestamp
+   **Then** the incoming record is discarded as out-of-order, and a logged warning/debug entry is written.
+3. **Given** the dedup primary key for ticks is `(stock_token, timestamp, resolution)`
+   **When** an incoming tick duplicates an existing stored record on that primary key
+   **Then** no duplicate row is created (row count remains unchanged) and the duplicate is discarded (with debug logging).
+4. **Given** an incoming tick has `price` or `volume` equal to zero
+   **When** the tick is processed
+   **Then** the record is discarded and not written to the tick table.
+5. **Given** a configurable tolerance band is set (max single-tick move exceeding 5% is invalid per data quality rules)
+   **When** a tick violates the tolerance band vs the previous tick
+   **Then** the record is discarded and logged.
+6. **Given** ingest-to-durable-store SLO thresholds are configured for the active watchlist
+   **When** ticks are ingested under normal load
+   **Then** measured ingest-to-durable-store latency meets the configured `p95/p99` thresholds in the operational SLO set.
+7. **Given** a tick is flagged as at/beyond the stock's NSE circuit limit
+   **When** the tick is processed
+   **Then** it is stored with an indicator/flag for the circuit-limit condition (without causing the ingestion flow to crash).
