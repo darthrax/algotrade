@@ -257,6 +257,10 @@ So that the feature engineering pipeline always runs on a complete, gap-free tim
    **When** the system evaluates readiness
    **Then** normal signal generation for that symbol is blocked and the operator receives an explicit readiness reason (no silent failure).
 
+7. **Given** startup gap fill is retried for the same symbols and time ranges
+   **When** the bootstrap re-runs
+   **Then** it is idempotent (no duplicate tick rows are created) and the retry is audit-evidenced for traceability.
+
 ### Story 1.3: Missing Data Detection + Operator Notification
 As a technical operator,
 I want the system to detect missing market data beyond a configured threshold during market hours and notify me,
@@ -281,6 +285,10 @@ So that the feature window is flagged as unreliable and entries are handled safe
 6. **Given** the system’s data mode is degraded (`REST_POLL`)
    **When** missingness detection logic runs
    **Then** it follows the intended degraded-mode semantics: monitoring/alerting stays accurate while new entries remain suppressed by policy.
+
+7. **Given** the same missing-data gap is detected repeatedly for an instrument/session
+   **When** the detection logic is retried with the same gap window identifier
+   **Then** operator notifications are idempotent/deduplicated and an alert evidence record is stored for that gap window.
 
 ### Story 1.4: Degraded Quote Mode (`REST_POLL`) + Entries Suppressed by Policy
 As a technical operator,
@@ -307,6 +315,10 @@ So that exits/stops remain managed but the system never opens new risk on insuff
    **When** the policy suppresses the entry
    **Then** the suppression is traceable in logs/audit evidence (no silent success), and the operator can see the “what changed / why blocked” reason.
 
+7. **Given** the system is already in `REST_POLL`
+   **When** repeated connectivity failure events occur
+   **Then** REST_POLL mode changes are idempotent (no duplicate mode-change records) and the reason for remaining in degraded mode is audit-evidenced.
+
 ### Story 1.5: Tradable Universe Filters (Liquidity / Price / Event Proximity)
 As a technical operator,
 I want to maintain a tradable universe using configurable liquidity, price, and event-proximity filters,
@@ -332,6 +344,10 @@ So that the system trades only eligible instruments per policy.
    **When** the update occurs outside market hours
    **Then** the change is applied to the next refresh cycle and the update is audit-logged.
 
+7. **Given** the universe refresh is triggered multiple times with the same filter configuration and input snapshot
+   **When** the refresh runs again within the same refresh window
+   **Then** the watchlist output is idempotent/deterministic and the refresh outcome is audit-evidenced (which symbols were eligible/excluded).
+
 ### Story 1.6: Policy Gate — Block New Entries When Trading Is Forbidden (FR7)
 As a technical operator,
 I want the system to block new position entries for instruments or sessions where policy forbids trading,
@@ -356,6 +372,10 @@ So that the system never opens new risk during blackout windows, observation-onl
 6. **Given** the system is in degraded mode (`REST_POLL`)
    **When** policy restrictions apply at the same time as degraded semantics
    **Then** degraded semantics remain correct (entries suppressed due to granularity), and policy suppression does not incorrectly “re-open” entries due to mode transition timing.
+
+7. **Given** a policy suppression decision is evaluated for the same instrument/session and signal event
+   **When** the entry decision is retried (same policy evaluation identifier)
+   **Then** the suppression outcome is idempotent and an operator-visible reason/audit evidence is retained without duplicating entry attempts.
 
 ## Epic 2: Risk-Gated Trading Decisions & Operator Trust Loop
 Epic goal: Convert feature/signal proposals into fail-closed act/block decisions, place/track orders (paper/live parity), enforce risk constraints, and keep the operator informed with stable reason codes and next actions.
@@ -474,10 +494,7 @@ So that the system closes positions and halts all new risk immediately and remai
    **Then** the system writes immutable audit evidence linked to a `correlation_id` (showing who/what initiated the kill switch and the resulting state change).
 7. **Given** the kill switch is active
    **When** the operator views current state
-   **Then** the UI reflects a `Locked` contract state and provides required recovery steps for when/ how normal trading can resume.
-8. **Given** the operator console requires strong auth for risk-increasing actions
-   **When** kill switch activation is requested
-   **Then** unauthenticated/invalid requests are rejected and no position-closing/risk-halt actions occur (fail closed).
+   **Then** the UI reflects a `Locked` contract state, provides required recovery steps, and any unauthenticated/invalid kill-switch activation requests are rejected (fail closed).
 
 ### Story 2.5: Broker Adapter Order Acknowledgement + Partial Fills / Rejects / Timeouts State Handling (FR15)
 As a technical operator,
@@ -503,10 +520,7 @@ So that the operator always has accurate order/position state and safe reconcili
 6. **Given** duplicate broker responses or retried delivery occurs (same correlation_id / idempotency context)
    **When** the lifecycle updater processes the response again
    **Then** state updates are idempotent and do not regress or create duplicate fill events.
-7. **Given** the lifecycle transitions to a completion point (position open or terminal close)
-   **When** the system updates positions
-   **Then** the positions view model is consistent with the lifecycle state (no mismatch between order state and displayed position state).
-8. **Given** the traceability chain is enabled
+7. **Given** the traceability chain is enabled
    **When** lifecycle state changes occur
    **Then** immutable audit evidence is written linking: decision trace -> order intent -> lifecycle transitions -> fills/rejects/timeouts via correlation_id.
 
@@ -564,7 +578,7 @@ So that I can verify the system is tracking capital safely and reconciling actio
    **Then** the UI still shows the active contract/mode and the “entries allowed” interpretation alongside the positions view (contract-first semantics, per UX).
 7. **Given** console data retrieval fails temporarily (e.g., transient internal API error)
    **When** the console refresh runs
-   **Then** it surfaces a user-facing error with a stable reason label and “next action” guidance (retry/wait), rather than silently hiding data.
+   **Then** it surfaces a user-facing error with a stable reason label and “next action” guidance (retry/wait), and it logs/retains refresh error evidence; repeated refresh attempts are idempotent for the same error event.
 
 ### Story 2.8: Operator Notifications for Connectivity, Risk, Training, and Health (FR28 + UX)
 As a technical operator,
@@ -589,7 +603,7 @@ So that must-not-miss operational and governance signals are obvious immediately
    **Then** the system sends a notification summarizing “what changed” and the operator next safe action (ack/wait/open trace).
 6. **Given** notifications can be delivered multiple times due to transient errors
    **When** the same notification is retried (same event correlation_id / event_id)
-   **Then** the system deduplicates notification delivery and does not spam duplicate messages for the same event.
+   **Then** the system performs idempotent/deduplicated delivery and retains delivery evidence; it does not spam duplicate messages for the same event.
 7. **Given** the system is in degraded mode (`REST_POLL`)
    **When** a new notification is generated
    **Then** it reflects degraded-mode semantics correctly and does not falsely imply new entries are allowed.
@@ -614,7 +628,7 @@ So that “dead man’s switch” alerts and health gating behavior are reliable
    **Then** readiness transitions to ready within a bounded timeframe, and subsequent `/health` reads reflect the correct state.
 5. **Given** the system experiences transient failures during health evaluation
    **When** `/health` is requested again
-   **Then** results are consistent and do not oscillate rapidly (no misleading “ready” blips while dependencies remain unhealthy).
+   **Then** results are consistent and idempotent for the polling interval, and do not oscillate rapidly (no misleading “ready” blips while dependencies remain unhealthy).
 6. **Given** dead-man’s-switch monitoring is enabled
    **When** the main system fails to respond within the watchdog timeout window during market hours
    **Then** the system triggers an operator notification/alert and records evidence that the watchdog fired.
@@ -789,10 +803,10 @@ So that I can produce a complete record of signals, trades, and P&L with no look
    **Then** the replay applies transaction costs (brokerage/STT/exchange charges/GST on brokerage/stamp duty) and applies a slippage model consistent with order size and stock liquidity.
 6. **Given** replay runs for multiple symbols in the same session
    **When** the replay completes
-   **Then** the output is complete for all replayed symbols and includes data lineage identifiers needed to explain gap-filled behavior.
+   **Then** the output is complete for all replayed symbols and includes data lineage identifiers needed to explain gap-filled behavior as evidence.
 7. **Given** replay is retried (same replay configuration/version)
    **When** the same date replay is executed again with the same version
-   **Then** results remain consistent and the replay output does not produce duplicate/contradictory records for that replay version.
+   **Then** results remain consistent and replay output is idempotent: it does not produce duplicate/contradictory records for that replay version.
 
 ### Story 3.2: Performance Comparison (Time Splits / Benchmarks) under Shared Cost Model (FR19)
 As a technical operator,
