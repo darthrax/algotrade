@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UX Design Directions - AlgoTrade</title>
+    <style>
+      :root{
+        --bg: #0B1220;
+        --panel: #121C2F;
+        --text: #E6EDF6;
+        --muted: #8AA2BF;
+        --ok: #2FE6A6;
+        --warn: #FFCC66;
+        --block: #FF5C7A;
+        --normal: #45B7FF;
+        --degraded: #FFCC66;
+        --locked: #9B8CFF;
+
+        --radius: 14px;
+        --gap: 16px;
+        --pad: 16px;
+        --pad2: 24px;
+        --shadow: rgba(0,0,0,.35);
+      }
+
+      /* Theme variants (as documented in ux-design-specification.md) */
+      body[data-theme="2"]{
+        --bg: #0A0D12;
+        --panel: #141A22;
+        --text: #F1F5FF;
+        --muted: #93A4B8;
+        --ok: #8CFF2A;
+        --warn: #FFC857;
+        --block: #FF3B5C;
+        --normal: #6BE6FF;
+        --degraded: #FFC857;
+        --locked: #B78BFF;
+      }
+      body[data-theme="3"]{
+        --bg: #0E0F14;
+        --panel: #161823;
+        --text: #F2F4FF;
+        --muted: #A2AAC2;
+        --ok: #46E6B6;
+        --warn: #FFB020;
+        --block: #FF4D6D;
+        --normal: #59C2FF;
+        --degraded: #FFB020;
+        --locked: #C69CFF;
+      }
+
+      *{ box-sizing: border-box; }
+      body{
+        margin:0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: radial-gradient(1200px 700px at 20% 0%, rgba(69,183,255,.10), transparent 55%),
+                    radial-gradient(900px 500px at 90% 10%, rgba(255,204,102,.10), transparent 50%),
+                    var(--bg);
+        color: var(--text);
+      }
+
+      .topbar{
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        backdrop-filter: blur(8px);
+        background: rgba(0,0,0,.25);
+        border-bottom: 1px solid rgba(255,255,255,.06);
+      }
+      .topbar-inner{
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 14px 16px;
+        display:flex;
+        align-items:center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .brand{
+        display:flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .brand strong{ font-size: 14px; letter-spacing: .2px; }
+      .brand span{ color: var(--muted); font-size: 12px; }
+
+      .controls{
+        display:flex;
+        gap: 10px;
+        align-items:center;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .seg{
+        display:flex;
+        border: 1px solid rgba(255,255,255,.10);
+        border-radius: 999px;
+        overflow:hidden;
+      }
+      .seg button{
+        background: transparent;
+        color: var(--text);
+        border: 0;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+      .seg button[aria-pressed="true"]{
+        background: rgba(255,255,255,.08);
+      }
+      .btn{
+        background: rgba(255,255,255,.06);
+        border: 1px solid rgba(255,255,255,.10);
+        color: var(--text);
+        border-radius: 999px;
+        padding: 9px 12px;
+        cursor:pointer;
+        font-size: 12px;
+      }
+
+      .wrap{
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 22px 16px 60px;
+      }
+
+      .directions{
+        display:none;
+        gap: var(--gap);
+      }
+      .directions.active{ display:grid; }
+
+      .card{
+        background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+        border: 1px solid rgba(255,255,255,.09);
+        border-radius: var(--radius);
+        box-shadow: 0 10px 30px var(--shadow);
+        padding: var(--pad);
+      }
+      .title{
+        font-size: 12px;
+        color: var(--muted);
+        letter-spacing: .25px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+
+      .state-header{
+        display:flex;
+        align-items:flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px;
+        border-radius: var(--radius);
+        border: 1px solid rgba(255,255,255,.10);
+        background:
+          linear-gradient(90deg, rgba(69,183,255,.16), rgba(255,204,102,.08), rgba(255,92,122,.12));
+      }
+      .state-left{
+        display:flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .state-title{
+        font-weight: 700;
+        letter-spacing: .2px;
+        font-size: 14px;
+      }
+      .state-sub{
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+      .pill{
+        display:inline-flex;
+        align-items:center;
+        gap: 8px;
+        border-radius: 999px;
+        padding: 8px 10px;
+        border: 1px solid rgba(255,255,255,.12);
+        background: rgba(0,0,0,.12);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+      .dot{
+        width: 9px; height: 9px; border-radius: 99px;
+        background: var(--normal);
+        box-shadow: 0 0 0 4px rgba(69,183,255,.18);
+      }
+      .pill[data-kind="degraded"] .dot{
+        background: var(--degraded);
+        box-shadow: 0 0 0 4px rgba(255,204,102,.18);
+      }
+      .pill[data-kind="locked"] .dot{
+        background: var(--locked);
+        box-shadow: 0 0 0 4px rgba(155,140,255,.18);
+      }
+
+      .kv{
+        display:grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .kv .item{
+        background: rgba(255,255,255,.04);
+        border: 1px solid rgba(255,255,255,.07);
+        border-radius: 12px;
+        padding: 10px;
+      }
+      .kv .item b{ display:block; font-size: 13px; margin-bottom: 4px; }
+      .kv .item span{ color: var(--muted); font-size: 12px; line-height: 1.3; }
+
+      .severity{
+        display:flex;
+        align-items:center;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .sev-badge{
+        font-size: 12px;
+        padding: 7px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,.12);
+        background: rgba(0,0,0,.12);
+      }
+      .sev-badge[data-sev="ok"]{ border-color: rgba(47,230,166,.35); color: var(--ok); }
+      .sev-badge[data-sev="warn"]{ border-color: rgba(255,204,102,.35); color: var(--warn); }
+      .sev-badge[data-sev="block"]{ border-color: rgba(255,92,122,.35); color: var(--block); }
+
+      .decision-card{
+        border-radius: var(--radius);
+        border: 1px solid rgba(255,255,255,.10);
+        padding: 16px;
+        background: rgba(255,255,255,.03);
+      }
+      .decision-top{
+        display:flex;
+        align-items:flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .decision-top h3{
+        margin: 0;
+        font-size: 14px;
+        letter-spacing: .2px;
+      }
+      .small{
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+      .reason{
+        margin-top: 12px;
+        border-radius: 12px;
+        padding: 12px;
+        border: 1px dashed rgba(255,255,255,.18);
+        background: rgba(0,0,0,.10);
+      }
+      .reason b{ font-size: 12px; letter-spacing: .25px; text-transform: uppercase; color: var(--muted); }
+      .reason p{ margin: 6px 0 0; font-size: 13px; }
+
+      .list{
+        display:flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .row{
+        display:flex;
+        gap: 10px;
+        align-items:flex-start;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,.07);
+        background: rgba(255,255,255,.03);
+      }
+      .row .icon{
+        width: 28px; height: 28px; border-radius: 10px;
+        display:flex; align-items:center; justify-content: center;
+        border: 1px solid rgba(255,255,255,.12);
+        background: rgba(0,0,0,.10);
+        font-size: 13px;
+      }
+      .row .meta{
+        flex: 1;
+      }
+      .row .meta b{ display:block; font-size: 13px; margin-bottom: 3px; }
+      .row .meta span{ color: var(--muted); font-size: 12px; line-height: 1.3; }
+
+      /* Layout directions */
+      .dir-1{
+        grid-template-columns: 1fr 1fr 1fr;
+        align-items:start;
+      }
+      .dir-1 .wide{ grid-column: span 1; }
+
+      .dir-2{
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .dir-3{
+        grid-template-columns: 1.2fr .8fr;
+      }
+
+      .dir-4{
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .dir-5{
+        grid-template-columns: 1fr;
+      }
+
+      .dir-6{
+        grid-template-columns: .95fr 1.05fr;
+      }
+
+      .visual{
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,.08);
+        background: rgba(0,0,0,.12);
+        height: 220px;
+        position: relative;
+        overflow:hidden;
+      }
+      .gridlines{
+        position:absolute; inset:0;
+        background-image:
+          linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px);
+        background-size: 24px 24px;
+        opacity: .55;
+      }
+      .ann{
+        position:absolute;
+        left: 18px;
+        top: 18px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,.10);
+        background: rgba(255,255,255,.03);
+        width: min(320px, calc(100% - 36px));
+      }
+      .ann b{ display:block; font-size: 13px; margin-bottom: 4px; }
+      .ann span{ color: var(--muted); font-size: 12px; line-height: 1.35; }
+
+      .line{
+        position:absolute;
+        left: 0; right: 0;
+        bottom: 30px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(69,183,255,.55), rgba(255,204,102,.35), transparent);
+        opacity:.9;
+      }
+      .bubble{
+        position:absolute;
+        bottom: 48px;
+        width: 10px; height: 10px; border-radius: 999px;
+        background: var(--degraded);
+        box-shadow: 0 0 0 6px rgba(255,204,102,.12);
+      }
+    </style>
+  </head>
+  <body data-theme="1">
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <strong>AlgoTrade Operator UX</strong>
+          <span>Step 9: Design Direction Mockups (dark + airy + accent-led)</span>
+        </div>
+
+        <div class="controls">
+          <div class="seg" role="group" aria-label="Theme selector">
+            <button type="button" onclick="setTheme(1)" aria-pressed="true">Theme 1</button>
+            <button type="button" onclick="setTheme(2)" aria-pressed="false">Theme 2</button>
+            <button type="button" onclick="setTheme(3)" aria-pressed="false">Theme 3</button>
+          </div>
+          <button class="btn" onclick="resetToDirection(1)">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <div class="controls" style="margin-bottom: 16px; justify-content:flex-start;">
+        <div class="seg" role="group" aria-label="Direction selector">
+          <button type="button" onclick="showDirection(1)" aria-pressed="true">Direction 1</button>
+          <button type="button" onclick="showDirection(2)" aria-pressed="false">Direction 2</button>
+          <button type="button" onclick="showDirection(3)" aria-pressed="false">Direction 3</button>
+          <button type="button" onclick="showDirection(4)" aria-pressed="false">Direction 4</button>
+          <button type="button" onclick="showDirection(5)" aria-pressed="false">Direction 5</button>
+          <button type="button" onclick="showDirection(6)" aria-pressed="false">Direction 6</button>
+        </div>
+      </div>
+
+      <!-- Direction 1: 3-column airy grid (monitoring-style) -->
+      <div id="dir-1" class="directions dir-1 active">
+        <div class="card">
+          <div class="title">Morning Brief Glance</div>
+          <div class="state-header">
+            <div class="state-left">
+              <div class="state-title">Contract: Normal (RTH)</div>
+              <div class="state-sub">Entries allowed by policy. Freshness within SLO for watchlist.</div>
+              <div class="severity">
+                <span class="sev-badge" data-sev="ok">Trust: OK</span>
+              </div>
+            </div>
+            <span class="pill" data-kind="normal">
+              <span class="dot" style="background: var(--normal); box-shadow: 0 0 0 4px rgba(69,183,255,.18)"></span>
+              WebSocket
+            </span>
+          </div>
+          <div style="height: 14px"></div>
+          <div class="kv">
+            <div class="item">
+              <b>Entries</b>
+              <span>Allowed now</span>
+            </div>
+            <div class="item">
+              <b>Mode</b>
+              <span>Normal contract</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="title">Decision (Act vs Block)</div>
+          <div class="decision-card">
+            <div class="decision-top">
+              <h3>TCS • Signal proposes BUY</h3>
+              <span class="pill" data-kind="degraded" style="margin-top:-4px;">
+                <span class="dot" style="background: var(--warn); box-shadow: 0 0 0 4px rgba(255,204,102,.18)"></span>
+                Risk verdict
+              </span>
+            </div>
+            <div class="small" style="margin-top:6px;">
+              Causal chain shown: freshness → feature snapshot → risk checks → broker outcome / suppression
+            </div>
+            <div class="reason">
+              <b>Block reason</b>
+              <p>
+                Spread too wide for safe entry (pre-trade check failed). Next action: wait until staleness/spread returns within limits.
+              </p>
+            </div>
+            <div class="severity">
+              <span class="sev-badge" data-sev="block">Result: BLOCK</span>
+              <span class="small">Reason code available in trace & logs</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="title">Operator Alerts</div>
+          <div class="list" style="margin-top: 6px;">
+            <div class="row">
+              <div class="icon" style="color: var(--warn);">!</div>
+              <div class="meta">
+                <b>Pre-trade check: Spread too wide</b>
+                <span>TCS suppressed by policy guardrail. No new entries until cleared.</span>
+              </div>
+            </div>
+            <div class="row">
+              <div class="icon" style="color: var(--ok);">✓</div>
+              <div class="meta">
+                <b>Data freshness within SLO</b>
+                <span>Watchlist features usable. Act vs block decisions remain reliable.</span>
+              </div>
+            </div>
+            <div class="row">
+              <div class="icon" style="color: var(--ok);">⏻</div>
+              <div class="meta">
+                <b>Kill switch ready</b>
+                <span>Visible & deliberate. Two-step confirmation for safe operation.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Direction 2: 2-column: decision-first + reconciliation -->
+      <div id="dir-2" class="directions dir-2">
+        <div class="card">
+          <div class="title">Morning Brief Glance</div>
+          <div class="state-header">
+            <div class="state-left">
+              <div class="state-title">Contract: Degraded (`REST_POLL`)</div>
+              <div class="state-sub">Entries suppressed by policy. Positions managed; signals cannot open new risk.</div>
+              <div class="severity">
+                <span class="sev-badge" data-sev="warn">Trust: Degraded</span>
+              </div>
+            </div>
+            <span class="pill" data-kind="degraded">
+              <span class="dot"></span>
+              REST_POLL
+            </span>
+          </div>
+          <div style="height: 14px"></div>
+          <div class="kv">
+            <div class="item">
+              <b>Entries</b>
+              <span>Suppressed by policy</span>
+            </div>
+            <div class="item">
+              <b>What’s active</b>
+              <span>Stops/exits + monitoring</span>
+            </div>
+          </div>
+
+          <div style="height: 14px"></div>
+          <div class="title" style="margin-top:10px;">Next window guidance</div>
+          <div class="small">
+            Expected: WebSocket reconnect within <b>~90s</b>, then gap backfill completes before entries resume.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="title">Decision Trace + Reconciliation</div>
+          <div class="decision-card">
+            <div class="decision-top">
+              <h3>TCS • Signal proposes BUY</h3>
+              <span class="pill" data-kind="locked">
+                <span class="dot"></span>
+                Policy gate
+              </span>
+            </div>
+            <div class="small" style="margin-top:6px;">
+              Act vs block is explicit: decision cards never imply success via silence.
+            </div>
+            <div class="reason">
+              <b>Block reason</b>
+              <p>Data mode is `REST_POLL` (insufficient granularity). Next action: observe only; exits remain managed.</p>
+            </div>
+            <div class="severity">
+              <span class="sev-badge" data-sev="block">Result: BLOCK</span>
+              <span class="small">Traceable in decision timeline</span>
+            </div>
+          </div>
+
+          <div style="height: 14px"></div>
+          <div class="title">EOD Reconciliation (status)</div>
+          <div class="list">
+            <div class="row">
+              <div class="icon" style="color: var(--ok);">✓</div>
+              <div class="meta">
+                <b>Broker vs internal: Pass</b>
+                <span>Match complete. No unexplained transitions.</span>
+              </div>
+            </div>
+            <div class="row">
+              <div class="icon" style="color: var(--muted, #8AA2BF);">i</div>
+              <div class="meta">
+                <b>Waiver policy</b>
+                <span>Only when explicitly waived with audit note (not silent).</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Direction 3: Grafana-like panels -->
+      <div id="dir-3" class="directions dir-3">
+        <div class="card">
+          <div class="title">Panel Grid (monitoring semantics)</div>
+          <div class="kv" style="grid-template-columns: 1fr 1fr; margin-top: 8px;">
+            <div class="item">
+              <b>Freshness</b>
+              <span style="color: var(--ok); font-weight: 700;">Within SLO</span>
+            </div>
+            <div class="item">
+              <b>Data mode</b>
+              <span style="color: var(--warn); font-weight: 700;">REST_POLL</span>
+            </div>
+            <div class="item">
+              <b>Entry permission</b>
+              <span style="color: var(--block); font-weight: 700;">Suppressed</span>
+            </div>
+            <div class="item">
+              <b>Risk verdict</b>
+              <span style="color: var(--warn); font-weight: 700;">Review</span>
+            </div>
+          </div>
+
+          <div style="height: 14px"></div>
+          <div class="decision-card">
+            <div class="title" style="margin-bottom:6px;">Top reasons (stable reason codes)</div>
+            <div class="list">
+              <div class="row">
+                <div class="icon" style="color: var(--warn);">!</div>
+                <div class="meta">
+                  <b>CHK_SPREAD_WIDE</b>
+                  <span>Spread beyond limit. Next action: wait for safe spread.</span>
+                </div>
+              </div>
+              <div class="row">
+                <div class="icon" style="color: var(--block);">⛔</div>
+                <div class="meta">
+                  <b>DATA_MODE_INSUFFICIENT</b>
+                  <span>During `REST_POLL`, new entries are suppressed by policy.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="title">Decision card (one example)</div>
+          <div class="decision-card">
+            <div class="decision-top">
+              <h3>TCS • Proposed BUY</h3>
+              <span class="sev-badge" data-sev="block">Result: BLOCK</span>
+            </div>
+            <div class="reason" style="margin-top: 12px;">
+              <b>Operator-facing explanation</b>
+              <p>Suppressed because data granularity is too coarse in `REST_POLL`. Exits still managed.</p>
+            </div>
+          </div>
+
+          <div style="height: 14px"></div>
+          <div class="title">Airy alerts</div>
+          <div class="small">
+            Alerts use severity accents consistently (no color-only meaning) and include next actions.
+          </div>
+        </div>
+      </div>
+
+      <!-- Direction 4: Datadog timeline -->
+      <div id="dir-4" class="directions dir-4">
+        <div class="card">
+          <div class="title">Incident / Decision Timeline</div>
+          <div class="visual">
+            <div class="gridlines"></div>
+            <div class="ann">
+              <b>Decision trace</b>
+              <span>Freshness → Data mode → Risk gates → Order state (or suppression)</span>
+            </div>
+            <div class="line"></div>
+            <div class="bubble" style="left: 22%"></div>
+            <div class="bubble" style="left: 52%; background: var(--block); box-shadow: 0 0 0 6px rgba(255,92,122,.14);"></div>
+            <div class="bubble" style="left: 78%; background: var(--ok); box-shadow: 0 0 0 6px rgba(47,230,166,.12);"></div>
+          </div>
+
+          <div style="height: 12px"></div>
+          <div class="small">
+            Hover/inspect would reveal the same evidence the operator can reconcile later.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="title">State + Act/Block Outcome</div>
+          <div class="state-header">
+            <div class="state-left">
+              <div class="state-title">Contract: Locked (market-hours config lock)</div>
+              <div class="state-sub">Controls are intentionally disabled. Review allowed only outside locked window.</div>
+              <div class="severity">
+                <span class="sev-badge" data-sev="warn">Trust: Locked</span>
+              </div>
+            </div>
+            <span class="pill" data-kind="locked">
+              <span class="dot"></span>
+              Locked
+            </span>
+          </div>
+
+          <div style="height: 14px"></div>
+          <div class="decision-card">
+            <div class="decision-top">
+              <h3>Promotion / config change attempt</h3>
+              <span class="sev-badge" data-sev="block">Denied</span>
+            </div>
+            <div class="reason">
+              <b>Why (operator-facing)</b>
+              <p>Market-hours lock (09:00–15:45 IST). Next action: approve outside the locked window; audit logs capture your requested change.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Direction 5: TradingView annotation feel (scan quickly then inspect) -->
+      <div id="dir-5" class="directions dir-5">
+        <div class="card">
+          <div class="title">Chart-first (annotation + progressive disclosure)</div>
+          <div class="visual" style="height: 320px;">
+            <div class="gridlines"></div>
+            <div class="ann" style="top: 16px;">
+              <b>Annotation overlay</b>
+              <span>Markers show act/block moments + data mode changes.</span>
+            </div>
+            <div class="line" style="bottom: 70px; opacity: .65;"></div>
+            <div class="bubble" style="left: 30%; background: var(--normal);"></div>
+            <div class="bubble" style="left: 56%; background: var(--block); box-shadow: 0 0 0 6px rgba(255,92,122,.14);"></div>
+            <div class="bubble" style="left: 72%; background: var(--degraded);"></div>
+          </div>
+
+          <div style="height: 14px"></div>
+          <div class="decision-card">
+            <div class="decision-top">
+              <h3>TCS • BLOCK (spread wide)</h3>
+              <span class="sev-badge" data-sev="block">Next: wait</span>
+            </div>
+            <div class="small" style="margin-top:6px;">
+              Operator clicks the marker → sees the same decision trace details.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Direction 6: Hybrid narrative (timeline + decision cards) -->
+      <div id="dir-6" class="directions dir-6">
+        <div class="card">
+          <div class="title">Timeline (what happened when)</div>
+          <div class="visual" style="height: 260px;">
+            <div class="gridlines"></div>
+            <div class="ann">
+              <b>Key events</b>
+              <span>WS drop → `REST_POLL` → entries suppressed → exits managed</span>
+            </div>
+            <div class="line" style="bottom: 50px;"></div>
+            <div class="bubble" style="left: 24%; background: var(--warn);"></div>
+            <div class="bubble" style="left: 52%; background: var(--block); box-shadow: 0 0 0 6px rgba(255,92,122,.14);"></div>
+            <div class="bubble" style="left: 80%; background: var(--ok); box-shadow: 0 0 0 6px rgba(47,230,166,.12);"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="title">Act/Block + Reconciliation-ready explanation</div>
+          <div class="decision-card">
+            <div class="decision-top">
+              <h3>TCS • Proposed BUY (blocked)</h3>
+              <span class="sev-badge" data-sev="block">BLOCK</span>
+            </div>
+            <div class="reason">
+              <b>Decision trace (operator language)</b>
+              <p>We’re in `REST_POLL`, so new entries are suppressed by policy. Exits and stop management remain active.</p>
+            </div>
+            <div class="severity">
+              <span class="sev-badge" data-sev="warn">Mode changed</span>
+              <span class="small">Timeline provides the evidence trail</span>
+            </div>
+          </div>
+
+          <div style="height: 14px"></div>
+          <div class="title">EOD checklist cue</div>
+          <div class="small">
+            “Broker vs internal: pending” and “Waiver policy available” appear in a fixed, scan-friendly spot.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function setTheme(t){
+        document.body.setAttribute("data-theme", String(t));
+        // Update aria-pressed state
+        document.querySelectorAll('.seg button').forEach(btn=>{
+          const txt = btn.textContent.trim();
+          btn.setAttribute('aria-pressed', txt.endsWith(String(t)) ? 'true' : 'false');
+        });
+      }
+
+      function showDirection(n){
+        for(let i=1;i<=6;i++){
+          const el = document.getElementById('dir-' + i);
+          if(!el) continue;
+          el.classList.toggle('active', i === n);
+        }
+        // update direction button states
+        const buttons = document.querySelectorAll('.controls .seg button');
+        buttons.forEach(b=>{
+          const label = b.textContent.trim().toLowerCase();
+          const match = label.match(/direction\\s*(\\d+)/);
+          if(match){
+            const dir = Number(match[1]);
+            b.setAttribute('aria-pressed', String(dir) === String(n) ? 'true' : 'false');
+          }
+        });
+      }
+
+      function resetToDirection(n){
+        showDirection(n);
+      }
+    </script>
+  </body>
+</html>
+
