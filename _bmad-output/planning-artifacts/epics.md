@@ -734,3 +734,31 @@ So that the override is auditable and traceable with operator intent in the evid
 7. **Given** the UI is open and the operator is acting under stress
    **When** the reason flow is displayed
    **Then** it provides a clear operator “next action” expectation and does not allow silent state changes.
+
+### Story 2.14: Bracket Orders + Protective Exit Parameters (FR14)
+As a technical operator,
+I want the system to place, amend, and close orders using protective exit parameters (bracket: stop-loss + target),
+So that every open position has guaranteed exits on the broker and exit orders can be safely updated/cancelled/terminated per policy.
+
+**Acceptance Criteria:**
+1. **Given** an eligible recommendation reaches an `ACT` verdict and entries are allowed by contract/data-mode policy
+   **When** the system executes the entry
+   **Then** it places a **bracket order** via the internal execution/broker adapter using protective exit parameters (stop-loss + target) per policy/config.
+2. **Given** bracket protective exit parameters are configured (defaults or policy values)
+   **When** a bracket entry is placed
+   **Then** the stop-loss and target values are persisted in the order intent/order record for audit.
+3. **Given** bracket orders are placed and the system is tracking lifecycle state
+   **When** the broker confirms entry acknowledgement and later confirms an exit via target or stop-loss
+   **Then** the order lifecycle transitions through appropriate exit states (e.g., `EXIT_SENT -> EXIT_CONFIRMED -> FLAT`) and positions update consistently.
+4. **Given** protective exit orders may need to be amended within configured limits
+   **When** a policy-allowed amendment is requested (cancel/replace or amend exit orders)
+   **Then** the system amends the protective exit orders, persists updated exit parameters, and maintains idempotency for the same `correlation_id`.
+5. **Given** a protective exit order must be terminated because the position is being flattened (e.g., cancel/close due to policy/kill/termination path)
+   **When** the close is processed
+   **Then** the system ensures protective exits are not left dangling: it cancels/terminates exit orders per broker semantics and records terminal outcomes.
+6. **Given** execution is in paper mode
+   **When** a bracket entry is executed
+   **Then** the system simulates protective exits consistently with the same policy parameters and records lifecycle transitions (marked as simulated) for later reconciliation.
+7. **Given** the same bracket placement/amend request is retried (same `correlation_id` / idempotency key)
+   **When** the retry is handled
+   **Then** the system does not create duplicate entry/exit orders or duplicate lifecycle events; it reuses/updates the existing persisted lifecycle.
