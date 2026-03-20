@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/product-brief-algotrade-2026-03-20.md
@@ -694,3 +694,75 @@ Navigation must preserve the operator’s mental model: contract first, evidence
 **Accessibility:**
 - Tabs/left nav is keyboard navigable (arrow keys where possible, Enter to activate).
 - Every view has an accessible name (e.g., “Decisions”, “Reconciliation”, “Governance”, “Alerts”).
+
+## Responsive Design & Accessibility
+
+### Responsive Strategy
+**Scope:** Desktop + Tablet + Mobile.
+
+**Core rule:** The **State/Contract Header** must remain visible and preserve meaning across all screen sizes. Responsiveness may change layout density and navigation, but must not change permission/risk semantics.
+
+**Desktop (1024px+)**
+- Use multi-view navigation (tabs/left-nav) with stable selection highlighting.
+- Maintain airy, grid-stable panels for state, decisions, traces, alerts, and reconciliation.
+
+**Tablet (768–1023px)**
+- Keep multi-view navigation, but reduce panel density.
+- Use progressive disclosure (accordion/side panel expansion) so trace and reconciliation details don’t push out the contract header.
+
+**Mobile (320–767px)**
+- Single-column, progressive disclosure everywhere.
+- State/Contract Header becomes a sticky top bar.
+- The latest decision card (or the next actionable state) must be in the first viewport.
+- Navigation becomes bottom navigation or a single “Sections” menu.
+- Avoid hover-only affordances; provide touch-optimized controls.
+
+### Breakpoint Strategy
+Use standard breakpoints:
+- Mobile: `320–767px`
+- Tablet: `768–1023px`
+- Desktop: `1024px+`
+
+No custom breakpoints required unless Streamlit-specific layout constraints demand it during implementation.
+
+### Accessibility Strategy
+**Target:** WCAG **Level AA**.
+
+**Non-negotiables (operator-safety aligned)**
+- Contrast: ensure sufficient contrast in all three themes (Theme 1/2/3) for normal and large text.
+- Non-color cues: every “Block / Degraded / Locked” must include label + icon + operator-facing reason text (no color-only meaning).
+- Keyboard navigation:
+  - All interactive controls reachable without a mouse.
+  - Visible focus rings on every focusable element.
+  - Tab order matches the visible hierarchy and “next action” flow.
+- Modals/dialogs (waiver flow, kill switch two-step confirm, audit note entry):
+  - Focus trap inside the dialog while open.
+  - Safe close/cancel behavior (ESC cancels only when appropriate).
+  - Screen readers announce dialog role, title, and primary action.
+- Alerts and contract updates:
+  - Use `aria-live="polite"` for contract/header changes.
+  - Use `aria-live` for critical blocks sparingly; ensure the reason label is announced before details.
+
+### Testing Strategy
+**Responsive testing**
+- Validate at representative widths: ~375px (mobile), ~768px (tablet boundary), ~1024px (desktop boundary).
+- Confirm the State/Contract Header never scrolls out of view on mobile and the “next action” affordance remains accessible.
+
+**Accessibility testing**
+- Automated: `axe`/Lighthouse accessibility checks for each theme.
+- Keyboard-only walkthrough for every critical flow:
+  - Decisions → trace drill-down
+  - Reconciliation checklist + waiver capture
+  - Governance approval/denial paths
+  - Kill switch two-step confirm
+- Screen reader checks (one reference stack) and verify the contract header + reason code reading order.
+- Theme readibility:
+  - Verify contrast and focus visibility under Theme 1/2/3.
+  - Confirm suppression-by-policy is understandable without relying on color.
+
+### Implementation Guidelines
+- Use relative units (`rem`, `%`) and keep the spacing rhythm derived from the 8px base.
+- Mobile-first media queries; avoid fixed heights that can clip on small screens.
+- Ensure accordions/tabs/nav are implemented with accessible semantics (keyboard + ARIA patterns).
+- Theme switching must be visual-only: tokens update colors/spacing styles but never change labels, semantics, or allowed actions.
+
