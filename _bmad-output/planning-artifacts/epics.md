@@ -762,3 +762,34 @@ So that every open position has guaranteed exits on the broker and exit orders c
 7. **Given** the same bracket placement/amend request is retried (same `correlation_id` / idempotency key)
    **When** the retry is handled
    **Then** the system does not create duplicate entry/exit orders or duplicate lifecycle events; it reuses/updates the existing persisted lifecycle.
+
+## Epic 3: Deterministic Replay & Backtest Evidence
+Epic goal: Simulate prior sessions through the same decision pipeline and compare performance across time splits/benchmarks under a shared cost model.
+
+### Story 3.1: Historical Replay Tool with Simulation Clock + Data Source Hierarchy (FR18)
+As a technical operator,
+I want the system to replay any past trading date through the production model using a simulation clock and the same decision pipeline as live,
+So that I can produce a complete record of signals, trades, and P&L with no look-ahead bias and realistic fills.
+
+**Acceptance Criteria:**
+1. **Given** a past trading date is selected for replay
+   **When** the replay tool is executed
+   **Then** it replays that full day through the current production model and produces an output dataset containing every signal, every trade, and resulting P&L.
+2. **Given** the replay requires market data for the full day
+   **When** the replay fetches data for each symbol/timestamp range
+   **Then** it uses the same data source hierarchy as live operation: stored database records first, and REST API only to fill gaps.
+3. **Given** the replay is running with simulation clock mode enabled
+   **When** the model computes a simulated signal at timestamp `T`
+   **Then** the model receives only data that would have been available at exactly `T` (no look-ahead bias).
+4. **Given** a signal is generated at timestamp `T`
+   **When** the system simulates order execution
+   **Then** fills occur at the next available price after `T` (not at the signal bar close).
+5. **Given** transaction cost and slippage models are configured
+   **When** each simulated trade is priced
+   **Then** the replay applies transaction costs (brokerage/STT/exchange charges/GST on brokerage/stamp duty) and applies a slippage model consistent with order size and stock liquidity.
+6. **Given** replay runs for multiple symbols in the same session
+   **When** the replay completes
+   **Then** the output is complete for all replayed symbols and includes data lineage identifiers needed to explain gap-filled behavior.
+7. **Given** replay is retried (same replay configuration/version)
+   **When** the same date replay is executed again with the same version
+   **Then** results remain consistent and the replay output does not produce duplicate/contradictory records for that replay version.
